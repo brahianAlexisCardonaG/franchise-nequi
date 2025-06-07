@@ -19,7 +19,8 @@ public class FranchiseUseCase implements FranchiseServicePort {
                 .flatMap(fran->
                         franchisePersistencePort.findByName(fran.getName())
                                 .filter(exist -> !exist)
-                                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_NOT_EXISTS)))
+                                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
+                                        .FRANCHISE_ALREADY_EXISTS)))
                                 .flatMap(ignore ->
                                         franchisePersistencePort.createFranchise(Mono.just(fran)))
                 );

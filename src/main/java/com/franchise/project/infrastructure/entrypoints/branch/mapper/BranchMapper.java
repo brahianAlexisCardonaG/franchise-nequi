@@ -1,6 +1,6 @@
 package com.franchise.project.infrastructure.entrypoints.branch.mapper;
 
-import com.franchise.project.domain.branch.Branch;
+import com.franchise.project.domain.branch.model.Branch;
 import com.franchise.project.infrastructure.entrypoints.branch.dto.BranchDto;
 import org.mapstruct.Mapper;
 

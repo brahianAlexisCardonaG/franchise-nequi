@@ -1,4 +1,4 @@
-package com.franchise.project.application.config.franchise;
+package com.franchise.project.application.config.branch;
 
 import com.franchise.project.domain.branch.api.BranchServicePort;
 import com.franchise.project.domain.branch.spi.BranchPersistencePort;
