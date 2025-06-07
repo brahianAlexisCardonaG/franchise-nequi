@@ -1,0 +1,27 @@
+package com.franchise.project.domain.enums;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Getter
+public enum TechnicalMessage {
+    INTERNAL_ERROR("500","Something went wrong, please try again", ""),
+    INTERNAL_ERROR_IN_ADAPTERS("PRC501","Something went wrong in adapters, please try again", ""),
+    INVALID_REQUEST("400", "Bad Request, please verify data", ""),
+    INVALID_PARAMETERS(INVALID_REQUEST.getCode(), "Bad Parameters, please verify data", ""),
+
+    //franchise
+    FRANCHISE_CREATED("201", "Franchise created successfully", ""),
+    FRANCHISE_NOT_EXISTS("400"," The Franchise are not registered." ,"" ),
+
+    //branch
+    BRANCH_CREATED("201", "Branch created successfully", ""),
+    BRANCH_NOT_EXISTS("400"," The Branch are not registered." ,"" )
+    ;
+
+
+    private final String code;
+    private final String message;
+    private final String param;
+}
