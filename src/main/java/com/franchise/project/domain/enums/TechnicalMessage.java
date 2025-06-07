@@ -14,10 +14,17 @@ public enum TechnicalMessage {
     //franchise
     FRANCHISE_CREATED("201", "Franchise created successfully", ""),
     FRANCHISE_NOT_EXISTS("400"," The Franchise are not registered." ,"" ),
+    FRANCHISE_ALREADY_EXISTS("400"," The Franchise already found registered." ,"" ),
 
     //branch
     BRANCH_CREATED("201", "Branch created successfully", ""),
-    BRANCH_NOT_EXISTS("400"," The Branch are not registered." ,"" )
+    BRANCH_NOT_EXISTS("400"," The Branch are not registered." ,"" ),
+    BRANCH_ALREADY_EXISTS("400"," The Branch already found registered." ,"" ),
+
+    //product
+    PRODUCT_CREATED("201", "Product created successfully", ""),
+    PRODUCT_NOT_EXISTS("400"," The Product are not registered." ,"" ),
+    PRODUCT_ALREADY_EXISTS("400"," The Product already found registered." ,"" )
     ;
 
 

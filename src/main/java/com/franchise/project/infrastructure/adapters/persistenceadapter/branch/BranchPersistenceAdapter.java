@@ -1,6 +1,6 @@
 package com.franchise.project.infrastructure.adapters.persistenceadapter.branch;
 
-import com.franchise.project.domain.branch.Branch;
+import com.franchise.project.domain.branch.model.Branch;
 import com.franchise.project.domain.branch.spi.BranchPersistencePort;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.mapper.BranchEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.repository.BranchRepository;
@@ -27,5 +27,11 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
                 .map(branchEntityMapper::toModel)
                 .map(tech -> true)
                 .defaultIfEmpty(false);
+    }
+
+    @Override
+    public Mono<Branch> findById(Long id) {
+        return branchRepository.findById(id)
+                .map(branchEntityMapper::toModel);
     }
 }
