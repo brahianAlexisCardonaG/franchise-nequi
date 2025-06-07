@@ -1,4 +1,4 @@
-package com.franchise.project.domain.branch;
+package com.franchise.project.domain.branch.model;
 
 import com.franchise.project.domain.franchise.model.Franchise;
 import lombok.AllArgsConstructor;

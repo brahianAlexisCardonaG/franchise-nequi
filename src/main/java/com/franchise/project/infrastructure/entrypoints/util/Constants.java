@@ -14,4 +14,8 @@ public class Constants {
     //branch
     public static final String PATH_POST_BRANCH
             = "/api/v1/branch";
+
+    //product
+    public static final String PATH_POST_PRODUCT
+            = "/api/v1/product";
 }
