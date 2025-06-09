@@ -25,24 +25,20 @@ public class BranchUseCase implements BranchServicePort {
                                 .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
                                         .BRANCH_ALREADY_EXISTS)))
                                 .flatMap(ignore ->
-                                        branchPersistencePort.createBranch(Mono.just(bran))
-                                                .flatMap(brandSave ->
-                                                        franchisePersistencePort.findById(bran.getFranchiseId())
-                                                                .flatMap(franExist -> {
-                                                                    if(franExist == null){
-                                                                       return Mono.error(new BusinessException(TechnicalMessage
-                                                                                .BRANCH_NOT_EXISTS));
-                                                                    }
-                                                                    return Mono.just(franExist);
-                                                                })
-                                                                .flatMap(fran -> {
-                                                                    BranchFranchise branchFranchise = new BranchFranchise();
-                                                                    branchFranchise.setId(brandSave.getId());
-                                                                    branchFranchise.setName(brandSave.getName());
-                                                                    branchFranchise.setFranchise(fran);
-                                                                    return Mono.just(branchFranchise);
-                                                                }))
+                                        franchisePersistencePort.findById(bran.getFranchiseId())
+                                                .switchIfEmpty(Mono
+                                                        .error(new BusinessException(TechnicalMessage
+                                                                .FRANCHISE_NOT_EXISTS)))
                                 )
+                                .flatMap(fran ->
+                                        branchPersistencePort.createBranch(Mono.just(bran))
+                                                .flatMap(branchSaved -> {
+                                                    BranchFranchise branchFranchise = new BranchFranchise();
+                                                    branchFranchise.setId(branchSaved.getId());
+                                                    branchFranchise.setName(branchSaved.getName());
+                                                    branchFranchise.setFranchise(fran);
+                                                    return Mono.just(branchFranchise);
+                                                }))
                 );
     }
 }

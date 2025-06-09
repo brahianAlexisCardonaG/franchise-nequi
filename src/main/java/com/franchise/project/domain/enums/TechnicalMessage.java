@@ -15,6 +15,8 @@ public enum TechnicalMessage {
     FRANCHISE_CREATED("201", "Franchise created successfully", ""),
     FRANCHISE_NOT_EXISTS("400"," The Franchise are not registered." ,"" ),
     FRANCHISE_ALREADY_EXISTS("400"," The Franchise already found registered." ,"" ),
+    FRANCHISE_ID_REQUIRED("400"," The Franchise is required." ,"" ),
+    FRANCHISE_BRANCH_PRODUCT_FOUND("200", "Products associates a branches by franchiseId", ""),
 
     //branch
     BRANCH_CREATED("201", "Branch created successfully", ""),

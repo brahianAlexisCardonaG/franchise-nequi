@@ -5,6 +5,7 @@ import com.franchise.project.domain.product.spi.ProductPersistencePort;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.product.mapper.ProductEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -50,6 +51,12 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
         return product
                 .map(productEntityMapper::toEntity)
                 .flatMap(productRepository::save)
+                .map(productEntityMapper::toModel);
+    }
+
+    @Override
+    public Flux<Product> findProductByBranchId(Long branchId) {
+        return productRepository.findByBranchId(branchId)
                 .map(productEntityMapper::toModel);
     }
 
