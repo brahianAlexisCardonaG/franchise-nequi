@@ -1,10 +1,12 @@
 package com.franchise.project.infrastructure.entrypoints.franchise.handler;
 
 import com.franchise.project.domain.enums.TechnicalMessage;
+import com.franchise.project.domain.exception.BusinessException;
 import com.franchise.project.domain.franchise.api.FranchiseServicePort;
 import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDto;
 import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapper;
 import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperResponse;
+import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseBranchProductResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.validations.FranchiseValidationDto;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
@@ -53,5 +55,30 @@ public class FranchiseHandlerImpl {
                 .contextWrite(Context.of(X_MESSAGE_ID, ""))
                 .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
         return applyErrorHandler.applyErrorHandling(response);
+    }
+
+    public Mono<ServerResponse> getFranchiseIdBranchesProducts(ServerRequest request) {
+
+        Long franchiseId = request
+                .queryParam("franchiseId")
+                .map(Long::parseLong)
+                .orElseThrow(() -> new BusinessException(TechnicalMessage.FRANCHISE_ID_REQUIRED));
+
+        Mono<ServerResponse> response = franchiseServicePort.getFranchiseBranchProduct(franchiseId)
+                .map(franchiseMapperResponse::toFranchiseBranchProductListResponse)
+                .flatMap(franchise ->
+                ServerResponse.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiFranchiseBranchProductResponse.builder()
+                                .code(TechnicalMessage.FRANCHISE_BRANCH_PRODUCT_FOUND.getCode())
+                                .message(TechnicalMessage.FRANCHISE_BRANCH_PRODUCT_FOUND.getMessage())
+                                .date(Instant.now().toString())
+                                .data(franchise)
+                                .build())
+                )
+                .contextWrite(Context.of(X_MESSAGE_ID, ""))
+                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+        return applyErrorHandler.applyErrorHandling(response);
+
     }
 }
