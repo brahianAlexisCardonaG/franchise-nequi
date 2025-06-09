@@ -24,7 +24,9 @@ public enum TechnicalMessage {
     //product
     PRODUCT_CREATED("201", "Product created successfully", ""),
     PRODUCT_NOT_EXISTS("400"," The Product are not registered." ,"" ),
-    PRODUCT_ALREADY_EXISTS("400"," The Product already found registered." ,"" )
+    PRODUCT_ID_REQUIRED("400"," The Product is required." ,"" ),
+    PRODUCT_ALREADY_EXISTS("400"," The Product already found registered." ,"" ),
+    PRODUCT_BRANCH_DELETE("200"," The Product deleted of branch successfully." ,"" )
     ;
 
 

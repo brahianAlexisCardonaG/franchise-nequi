@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS product (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     stock INT NOT NULL DEFAULT 0,
-    branch_id INT NOT NULL,
+    branch_id INT NULL,
     CONSTRAINT fk_branch
         FOREIGN KEY (branch_id)
         REFERENCES branch(id)

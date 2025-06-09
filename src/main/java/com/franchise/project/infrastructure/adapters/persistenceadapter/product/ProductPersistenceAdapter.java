@@ -7,6 +7,8 @@ import com.franchise.project.infrastructure.adapters.persistenceadapter.product.
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 public class ProductPersistenceAdapter implements ProductPersistencePort {
 
@@ -28,4 +30,19 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
                 .map(tech -> true)
                 .defaultIfEmpty(false);
     }
+
+    @Override
+    public Mono<Product> findById(Long id) {
+        return productRepository.findById(id)
+                .map(productEntityMapper::toModel);
+    }
+
+    @Override
+    public Mono<Void> deleteRelateProductBranch(Mono<Product> product) {
+        return product
+                .map(productEntityMapper::toEntity)
+                .flatMap(productRepository::save)
+                .then();
+    }
+
 }
