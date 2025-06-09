@@ -11,4 +11,5 @@ public interface ProductPersistencePort {
     Mono<Boolean> findByName(String name);
     Mono<Product> findById(Long id);
     Mono<Void> deleteRelateProductBranch(Mono<Product> product);
+    Mono<Product> updateProductStock(Mono<Product> product);
 }
