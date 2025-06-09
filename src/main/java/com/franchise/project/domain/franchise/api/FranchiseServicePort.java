@@ -2,9 +2,11 @@ package com.franchise.project.domain.franchise.api;
 
 import com.franchise.project.domain.franchise.model.Franchise;
 import com.franchise.project.domain.franchise.model.FranchiseBranchProductList;
+import com.franchise.project.domain.product.model.Product;
 import reactor.core.publisher.Mono;
 
 public interface FranchiseServicePort {
     Mono<Franchise> createFranchise(Mono<Franchise> franchise);
     Mono<FranchiseBranchProductList> getFranchiseBranchProduct(Long franchiseId);
+    Mono<Franchise> updateName(Mono<Franchise> franchiseMono);
 }

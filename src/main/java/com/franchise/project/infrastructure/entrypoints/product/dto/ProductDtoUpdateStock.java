@@ -5,7 +5,7 @@ import lombok.Data;
 import java.math.BigInteger;
 
 @Data
-public class ProductDtoUpdate {
+public class ProductDtoUpdateStock {
     private Long Id;
     private BigInteger stock;
 }

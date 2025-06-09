@@ -22,6 +22,7 @@ public enum TechnicalMessage {
     BRANCH_CREATED("201", "Branch created successfully", ""),
     BRANCH_NOT_EXISTS("400"," The Branch are not registered." ,"" ),
     BRANCH_ALREADY_EXISTS("400"," The Branch already found registered." ,"" ),
+    BRANCH_UPDATE("200", "branch updated successfully", ""),
 
     //product
     PRODUCT_CREATED("201", "Product created successfully", ""),
