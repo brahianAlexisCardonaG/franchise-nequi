@@ -5,6 +5,7 @@ import com.franchise.project.domain.branch.spi.BranchPersistencePort;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.mapper.BranchEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.repository.BranchRepository;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
@@ -32,6 +33,12 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
     @Override
     public Mono<Branch> findById(Long id) {
         return branchRepository.findById(id)
+                .map(branchEntityMapper::toModel);
+    }
+
+    @Override
+    public Flux<Branch> findBranchesByFranchiseId(Long franchiseId) {
+        return branchRepository.findByFranchiseId(franchiseId)
                 .map(branchEntityMapper::toModel);
     }
 }

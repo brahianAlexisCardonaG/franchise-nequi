@@ -9,5 +9,4 @@ public class ProductResponse {
     private Long id;
     private String name;
     private BigInteger stock;
-    private Long branchId;
 }

@@ -25,26 +25,20 @@ public class ProductUseCase implements ProductServicePort {
                                 .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
                                         .PRODUCT_ALREADY_EXISTS)))
                                 .flatMap(ignore ->
+                                        branchPersistencePort.findById(prod.getBranchId())
+                                                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
+                                                        .BRANCH_NOT_EXISTS))))
+                                .flatMap(bran ->
                                         productPersistencePort.createProduct(Mono.just(prod))
-                                                .flatMap(prodSave ->
-                                                        branchPersistencePort.findById(prod.getBranchId())
-                                                                .flatMap(branExist -> {
-                                                                    if (branExist == null) {
-                                                                        return Mono.error(new BusinessException(TechnicalMessage
-                                                                                .BRANCH_NOT_EXISTS));
-                                                                    }
-                                                                    return Mono.just(branExist);
-                                                                })
-                                                                .flatMap(bran -> {
-                                                                    ProductBranch productBranch = new ProductBranch();
-                                                                    productBranch.setId(prodSave.getId());
-                                                                    productBranch.setName(prodSave.getName());
-                                                                    productBranch.setStock(prodSave.getStock());
+                                                .flatMap(branSaved -> {
+                                                    ProductBranch productBranch = new ProductBranch();
+                                                    productBranch.setId(branSaved.getId());
+                                                    productBranch.setName(branSaved.getName());
+                                                    productBranch.setStock(branSaved.getStock());
 
-                                                                    productBranch.setBranch(bran);
-                                                                    return Mono.just(productBranch);
-                                                                }))
-                                )
+                                                    productBranch.setBranch(bran);
+                                                    return Mono.just(productBranch);
+                                                }))
                 );
     }
 
@@ -67,19 +61,19 @@ public class ProductUseCase implements ProductServicePort {
     public Mono<Product> updateStock(Mono<Product> productMono) {
         return productMono
                 .flatMap(product -> productPersistencePort.findById(product.getId())
-                         .flatMap(prodExist -> {
-                             if (prodExist == null) {
-                                 return Mono.error(new BusinessException(TechnicalMessage
-                                         .BRANCH_NOT_EXISTS));
-                             }
-                             return Mono.just(prodExist);
-                         })
-                         .flatMap(
-                                 prod -> {
-                                     prod.setStock(product.getStock());
-                                     return productPersistencePort.updateProductStock(Mono.just(prod));
-                                 }
-                         )
+                        .flatMap(prodExist -> {
+                            if (prodExist == null) {
+                                return Mono.error(new BusinessException(TechnicalMessage
+                                        .BRANCH_NOT_EXISTS));
+                            }
+                            return Mono.just(prodExist);
+                        })
+                        .flatMap(
+                                prod -> {
+                                    prod.setStock(product.getStock());
+                                    return productPersistencePort.updateProductStock(Mono.just(prod));
+                                }
+                        )
                 );
     }
 }

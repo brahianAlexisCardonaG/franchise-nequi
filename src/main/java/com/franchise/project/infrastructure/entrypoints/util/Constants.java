@@ -8,7 +8,7 @@ public class Constants {
     public static final String FRANCHISE_ERROR = "Error on Franchise - [ERROR]";
 
     //franchise
-    public static final String PATH_POST_FRANCHISE
+    public static final String PATH_FRANCHISE
             = "/api/v1/franchise";
 
     //branch
