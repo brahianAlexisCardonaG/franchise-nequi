@@ -1,6 +1,5 @@
 package com.franchise.project.domain.product.usecase;
 
-import com.franchise.project.domain.branch.model.BranchFranchise;
 import com.franchise.project.domain.branch.spi.BranchPersistencePort;
 import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.exception.BusinessException;
@@ -10,6 +9,9 @@ import com.franchise.project.domain.product.model.ProductBranch;
 import com.franchise.project.domain.product.spi.ProductPersistencePort;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+
+import java.math.BigInteger;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class ProductUseCase implements ProductServicePort {
@@ -30,7 +32,7 @@ public class ProductUseCase implements ProductServicePort {
                                                 .flatMap(prodSave ->
                                                         branchPersistencePort.findById(prod.getBranchId())
                                                                 .flatMap(branExist -> {
-                                                                    if(branExist == null){
+                                                                    if (branExist == null) {
                                                                         return Mono.error(new BusinessException(TechnicalMessage
                                                                                 .BRANCH_NOT_EXISTS));
                                                                     }
@@ -47,5 +49,20 @@ public class ProductUseCase implements ProductServicePort {
                                                                 }))
                                 )
                 );
+    }
+
+    @Override
+    public Mono<Void> deleteProductBranch(Long productId) {
+        return productPersistencePort.findById(productId)
+                .flatMap(prodExist -> {
+                    if (prodExist == null) {
+                        return Mono.error(new BusinessException(TechnicalMessage
+                                .BRANCH_NOT_EXISTS));
+                    }
+                    return Mono.just(prodExist);
+                }).flatMap(product -> {
+                    product.setBranchId(null);
+                    return productPersistencePort.deleteRelateProductBranch(Mono.just(product));
+                }).then();
     }
 }

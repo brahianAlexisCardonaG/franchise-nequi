@@ -16,6 +16,6 @@ public class Constants {
             = "/api/v1/branch";
 
     //product
-    public static final String PATH_POST_PRODUCT
+    public static final String PATH_PRODUCT
             = "/api/v1/product";
 }
