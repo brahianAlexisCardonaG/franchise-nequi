@@ -41,4 +41,23 @@ public class BranchUseCase implements BranchServicePort {
                                                 }))
                 );
     }
+
+    @Override
+    public Mono<Branch> updateName(Mono<Branch> branchMono) {
+        return branchMono
+                .flatMap(branch -> branchPersistencePort.findById(branch.getId())
+                        .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
+                                .BRANCH_NOT_EXISTS)))
+
+                        .flatMap(branExist ->
+                                branchPersistencePort.findByName(branch.getName())
+                                        .filter(exist -> !exist)
+                                        .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
+                                                .BRANCH_ALREADY_EXISTS)))
+                                        .flatMap(ignore -> {
+                                            branExist.setName(branch.getName());
+                                            return branchPersistencePort.updateProduct(Mono.just(branExist));
+                                        }))
+                );
+    }
 }

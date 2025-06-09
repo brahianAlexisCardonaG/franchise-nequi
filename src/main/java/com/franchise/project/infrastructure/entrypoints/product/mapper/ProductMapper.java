@@ -2,7 +2,8 @@ package com.franchise.project.infrastructure.entrypoints.product.mapper;
 
 import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDto;
-import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdate;
+import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateName;
+import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateStock;
 import com.franchise.project.infrastructure.entrypoints.product.response.ProductResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -14,7 +15,9 @@ public interface ProductMapper {
 
     @Mapping(target = "name", ignore = true)
     @Mapping(target = "branchId", ignore = true)
-    Product toProductUpdate(ProductDtoUpdate productDtoUpdate);
+    Product toProductUpdateStock(ProductDtoUpdateStock productDtoUpdateStock);
 
-    ProductResponse toProductResponse(Product product);
+    @Mapping(target = "stock", ignore = true)
+    @Mapping(target = "branchId", ignore = true)
+    Product toProductUpdateName(ProductDtoUpdateName productDtoUpdateName);
 }

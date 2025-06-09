@@ -41,4 +41,12 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
         return branchRepository.findByFranchiseId(franchiseId)
                 .map(branchEntityMapper::toModel);
     }
+
+    @Override
+    public Mono<Branch> updateProduct(Mono<Branch> branchMono) {
+        return branchMono
+                .map(branchEntityMapper::toEntity)
+                .flatMap(branchRepository::save)
+                .map(branchEntityMapper::toModel);
+    }
 }

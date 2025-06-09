@@ -1,6 +1,7 @@
 package com.franchise.project.infrastructure.entrypoints.franchise;
 
 import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDto;
+import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDtoUpdateName;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseBranchProductResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.handler.FranchiseHandlerImpl;
@@ -87,11 +88,41 @@ public class RouterRestFranchise {
                             }
                     )
             )
+            ,
+            @RouterOperation(
+                    path = PATH_FRANCHISE_UPDATE_NAME,
+                    produces = {"application/json"},
+                    method = RequestMethod.PUT,
+                    beanClass = FranchiseHandlerImpl.class,
+                    beanMethod = "updateFranchiseName",
+                    operation = @Operation(
+                            operationId = "updateFranchiseName",
+                            summary = "Updated Franchise Name",
+                            tags = {"Endpoints Franchise"},
+                            requestBody = @RequestBody(
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = FranchiseDtoUpdateName.class))
+                            ),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Franchise updated successfully",
+                                            content = @Content(schema = @Schema(implementation
+                                                    = ApiFranchiseResponse.class))
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "400",
+                                            description = "Error de validation"
+                                    )
+                            }
+                    )
+            )
     })
     public RouterFunction<ServerResponse> routerFunctionFranchise(FranchiseHandlerImpl franchiseHandler) {
         return RouterFunctions
                 .route(POST(PATH_FRANCHISE), franchiseHandler::createFranchise)
                 .andRoute(GET(PATH_FRANCHISE), franchiseHandler::getFranchiseIdBranchesProducts)
+                .andRoute(PUT(PATH_FRANCHISE_UPDATE_NAME), franchiseHandler::updateFranchiseName)
                 ;
 
     }

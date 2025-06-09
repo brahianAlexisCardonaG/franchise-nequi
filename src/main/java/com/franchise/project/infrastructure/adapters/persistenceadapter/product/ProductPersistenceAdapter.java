@@ -47,7 +47,7 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     }
 
     @Override
-    public Mono<Product> updateProductStock(Mono<Product> product) {
+    public Mono<Product> updateProduct(Mono<Product> product) {
         return product
                 .map(productEntityMapper::toEntity)
                 .flatMap(productRepository::save)
