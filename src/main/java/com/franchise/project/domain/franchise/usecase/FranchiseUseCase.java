@@ -41,8 +41,8 @@ public class FranchiseUseCase implements FranchiseServicePort {
                         .findBranchesByFranchiseId(franchiseId)
                         .flatMap(branch -> productPersistencePort
                                 .findProductByBranchId(branch.getId()).reduce((p1, p2) ->
-                                            p1.getStock().compareTo(p2.getStock()) >= 0 ? p1 : p2
-                                    )
+                                        p1.getStock().compareTo(p2.getStock()) >= 0 ? p1 : p2
+                                )
                                 .flatMap(maxProduct -> Mono.just(
                                         new BranchProduct(
                                                 branch.getId(),
@@ -67,6 +67,24 @@ public class FranchiseUseCase implements FranchiseServicePort {
                                     result.setBranches(brachList);
                                     return result;
                                 })
+                );
+    }
+
+    @Override
+    public Mono<Franchise> updateName(Mono<Franchise> franchiseMono) {
+        return franchiseMono
+                .flatMap(franchise -> franchisePersistencePort.findById(franchise.getId())
+                        .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
+                                .FRANCHISE_NOT_EXISTS)))
+                        .flatMap(franExist -> franchisePersistencePort.findByName(franchise.getName())
+                                .filter(exist -> !exist)
+                                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
+                                        .FRANCHISE_ALREADY_EXISTS)))
+                                .flatMap(ignore -> {
+                                            franExist.setName(franchise.getName());
+                                            return franchisePersistencePort.updateFranchise(Mono.just(franExist));
+                                        })
+                                )
                 );
     }
 }

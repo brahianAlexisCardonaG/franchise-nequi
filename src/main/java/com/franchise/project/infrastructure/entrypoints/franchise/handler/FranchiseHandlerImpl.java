@@ -4,11 +4,14 @@ import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.exception.BusinessException;
 import com.franchise.project.domain.franchise.api.FranchiseServicePort;
 import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDto;
+import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDtoUpdateName;
 import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapper;
 import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseBranchProductResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.validations.FranchiseValidationDto;
+import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateName;
+import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductResponse;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -80,5 +83,26 @@ public class FranchiseHandlerImpl {
                 .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
         return applyErrorHandler.applyErrorHandling(response);
 
+    }
+
+    public Mono<ServerResponse> updateFranchiseName(ServerRequest request) {
+        Mono<ServerResponse> response = request.bodyToMono(FranchiseDtoUpdateName.class)
+                .flatMap(franchiseValidationDto::validateFranchiseDtoNameNotNullOrBlank)
+                .map(franchiseMapper::toFranchiseUpdateName)
+                .flatMap(prod -> franchiseServicePort.updateName(Mono.just(prod)))
+                .map(franchiseMapperResponse::toFranchiseResponse)
+                .flatMap( productResp ->
+                        ServerResponse.status(HttpStatus.CREATED)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(ApiFranchiseResponse.builder()
+                                        .code(TechnicalMessage.PRODUCT_UPDATE.getCode())
+                                        .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
+                                        .date(Instant.now().toString())
+                                        .data(productResp)
+                                        .build())
+                )
+                .contextWrite(Context.of(X_MESSAGE_ID, ""))
+                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+        return applyErrorHandler.applyErrorHandling(response);
     }
 }

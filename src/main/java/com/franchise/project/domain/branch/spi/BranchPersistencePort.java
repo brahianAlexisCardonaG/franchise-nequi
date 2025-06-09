@@ -9,4 +9,5 @@ public interface BranchPersistencePort {
     Mono<Boolean> findByName(String name);
     Mono<Branch> findById(Long id);
     Flux<Branch> findBranchesByFranchiseId(Long franchiseId);
+    Mono<Branch> updateProduct(Mono<Branch> branchMono);
 }

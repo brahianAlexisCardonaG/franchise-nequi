@@ -10,4 +10,5 @@ public interface ProductServicePort {
     Mono<ProductBranch> createProduct(Mono<Product> product);
     Mono<Void> deleteProductBranch(Long productId);
     Mono<Product> updateStock(Mono<Product> productMono);
+    Mono<Product> updateName(Mono<Product> productMono);
 }

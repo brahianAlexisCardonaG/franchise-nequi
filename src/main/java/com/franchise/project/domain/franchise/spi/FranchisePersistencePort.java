@@ -7,4 +7,5 @@ public interface FranchisePersistencePort {
     Mono<Franchise> createFranchise(Mono<Franchise> franchise);
     Mono<Boolean> findByName(String name);
     Mono<Franchise> findById(Long id);
+    Mono<Franchise> updateFranchise(Mono<Franchise> franchiseMono);
 }

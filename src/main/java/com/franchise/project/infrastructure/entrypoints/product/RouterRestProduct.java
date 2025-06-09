@@ -1,7 +1,8 @@
 package com.franchise.project.infrastructure.entrypoints.product;
 
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDto;
-import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdate;
+import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateName;
+import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateStock;
 import com.franchise.project.infrastructure.entrypoints.product.handler.ProductHandlerImpl;
 import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductBranchResponse;
 import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductResponse;
@@ -22,7 +23,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.PATH_PRODUCT;
+import static com.franchise.project.infrastructure.entrypoints.util.Constants.*;
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 
 @Configuration
@@ -67,7 +68,7 @@ public class RouterRestProduct {
                     operation = @Operation(
                             operationId = "deleteProductBranch",
                             summary = "Delete Product relate with Branch",
-                            tags = { "Endpoints Product" },
+                            tags = {"Endpoints Product"},
                             parameters = {
                                     @io.swagger.v3.oas.annotations.Parameter(
                                             in = ParameterIn.QUERY,
@@ -88,39 +89,68 @@ public class RouterRestProduct {
                     )
             ),
             @RouterOperation(
-            path = PATH_PRODUCT,
-            produces = {"application/json"},
-            method = RequestMethod.PUT,
-            beanClass = ProductHandlerImpl.class,
-            beanMethod = "updateProductStock",
-            operation = @Operation(
-                    operationId = "updateProductStock",
-                    summary = "Updated Product",
-                    tags = {"Endpoints Product"},
-                    requestBody = @RequestBody(
-                            required = true,
-                            content = @Content(schema = @Schema(implementation = ProductDtoUpdate.class))
-                    ),
-                    responses = {
-                            @ApiResponse(
-                                    responseCode = "200",
-                                    description = "Product updated successfully",
-                                    content = @Content(schema = @Schema(implementation
-                                            = ApiProductResponse.class))
+                    path = PATH_PRODUCT_UPDATE_STOCK,
+                    produces = {"application/json"},
+                    method = RequestMethod.PUT,
+                    beanClass = ProductHandlerImpl.class,
+                    beanMethod = "updateProductStock",
+                    operation = @Operation(
+                            operationId = "updateProductStock",
+                            summary = "Updated Product Stock",
+                            tags = {"Endpoints Product"},
+                            requestBody = @RequestBody(
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = ProductDtoUpdateStock.class))
                             ),
-                            @ApiResponse(
-                                    responseCode = "400",
-                                    description = "Error de validation"
-                            )
-                    }
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Product updated successfully",
+                                            content = @Content(schema = @Schema(implementation
+                                                    = ApiProductResponse.class))
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "400",
+                                            description = "Error de validation"
+                                    )
+                            }
+                    )
+            ),
+            @RouterOperation(
+                    path = PATH_PRODUCT_UPDATE_NAME,
+                    produces = {"application/json"},
+                    method = RequestMethod.PUT,
+                    beanClass = ProductHandlerImpl.class,
+                    beanMethod = "updateProductName",
+                    operation = @Operation(
+                            operationId = "updateProductName",
+                            summary = "Updated Product Name",
+                            tags = {"Endpoints Product"},
+                            requestBody = @RequestBody(
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = ProductDtoUpdateName.class))
+                            ),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Product updated successfully",
+                                            content = @Content(schema = @Schema(implementation
+                                                    = ApiProductResponse.class))
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "400",
+                                            description = "Error de validation"
+                                    )
+                            }
+                    )
             )
-    )
     })
     public RouterFunction<ServerResponse> routerFunctionProduct(ProductHandlerImpl productHandler) {
         return RouterFunctions
                 .route(POST(PATH_PRODUCT), productHandler::createProduct)
                 .andRoute(DELETE(PATH_PRODUCT), productHandler::deleteProductBranch)
-                .andRoute(PUT(PATH_PRODUCT), productHandler::updateProductStock);
+                .andRoute(PUT(PATH_PRODUCT_UPDATE_STOCK), productHandler::updateProductStock)
+                .andRoute(PUT(PATH_PRODUCT_UPDATE_NAME), productHandler::updateProductName);
 
     }
 }
