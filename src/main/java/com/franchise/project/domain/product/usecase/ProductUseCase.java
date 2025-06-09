@@ -10,9 +10,6 @@ import com.franchise.project.domain.product.spi.ProductPersistencePort;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-import java.math.BigInteger;
-import java.util.List;
-
 @RequiredArgsConstructor
 public class ProductUseCase implements ProductServicePort {
 
@@ -64,5 +61,25 @@ public class ProductUseCase implements ProductServicePort {
                     product.setBranchId(null);
                     return productPersistencePort.deleteRelateProductBranch(Mono.just(product));
                 }).then();
+    }
+
+    @Override
+    public Mono<Product> updateStock(Mono<Product> productMono) {
+        return productMono
+                .flatMap(product -> productPersistencePort.findById(product.getId())
+                         .flatMap(prodExist -> {
+                             if (prodExist == null) {
+                                 return Mono.error(new BusinessException(TechnicalMessage
+                                         .BRANCH_NOT_EXISTS));
+                             }
+                             return Mono.just(prodExist);
+                         })
+                         .flatMap(
+                                 prod -> {
+                                     prod.setStock(product.getStock());
+                                     return productPersistencePort.updateProductStock(Mono.just(prod));
+                                 }
+                         )
+                );
     }
 }

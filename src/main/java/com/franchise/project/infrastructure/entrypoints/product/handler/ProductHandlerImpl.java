@@ -6,9 +6,11 @@ import com.franchise.project.domain.product.api.ProductServicePort;
 import com.franchise.project.infrastructure.entrypoints.branch.dto.BranchDto;
 import com.franchise.project.infrastructure.entrypoints.branch.response.ApiBranchFranchiseResponse;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDto;
+import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdate;
 import com.franchise.project.infrastructure.entrypoints.product.mapper.ProductBranchMapperResponse;
 import com.franchise.project.infrastructure.entrypoints.product.mapper.ProductMapper;
 import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductBranchResponse;
+import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductResponse;
 import com.franchise.project.infrastructure.entrypoints.product.validations.ProductValidationDto;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.response.ApiResponseMessage;
@@ -41,8 +43,8 @@ public class ProductHandlerImpl {
 
     public Mono<ServerResponse> createProduct(ServerRequest request) {
         Mono<ServerResponse> response = request.bodyToMono(ProductDto.class)
-                .flatMap(productValidationDto::validateFieldNotNullOrBlank)
-                .map(productMapper::toProduct)
+                .flatMap(productValidationDto::validateDtoCreateNotNullOrBlank)
+                .map(productMapper::toProductCreate)
                 .flatMap(prod -> productServicePort.createProduct(Mono.just(prod)))
                 .map(productBranchMapperResponse::toProductBranchResponse)
                 .flatMap( productResp ->
@@ -73,6 +75,27 @@ public class ProductHandlerImpl {
                                         .code(TechnicalMessage.PRODUCT_BRANCH_DELETE.getCode())
                                         .message(TechnicalMessage.PRODUCT_BRANCH_DELETE.getMessage())
                                         .date(Instant.now().toString())
+                                        .build())
+                )
+                .contextWrite(Context.of(X_MESSAGE_ID, ""))
+                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+        return applyErrorHandler.applyErrorHandling(response);
+    }
+
+    public Mono<ServerResponse> updateProductStock(ServerRequest request) {
+        Mono<ServerResponse> response = request.bodyToMono(ProductDtoUpdate.class)
+                .flatMap(productValidationDto::validateDtoUpdateNotNullOrBlank)
+                .map(productMapper::toProductUpdate)
+                .flatMap(prod -> productServicePort.updateStock(Mono.just(prod)))
+                .map(productMapper::toProductResponse)
+                .flatMap( productResp ->
+                        ServerResponse.status(HttpStatus.CREATED)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(ApiProductResponse.builder()
+                                        .code(TechnicalMessage.PRODUCT_UPDATE.getCode())
+                                        .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
+                                        .date(Instant.now().toString())
+                                        .data(productResp)
                                         .build())
                 )
                 .contextWrite(Context.of(X_MESSAGE_ID, ""))
