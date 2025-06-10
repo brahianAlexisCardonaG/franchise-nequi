@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Infraestructura para Franchise App con RDS + ECS Fargate + Parameter Store
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC para ECS y RDS
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets para ECS y RDS (mínimo 2)
+
+  DBUsername:
+    Type: String
+    Default: postgres
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Default: root
+
+Resources:
+
+  # Security Group para RDS
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for RDS PostgreSQL
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0  # puedes restringir luego
+
+  # RDS PostgreSQL
+  PostgresDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: franchise-db
+      DBInstanceClass: db.t4g.micro
+      Engine: postgres
+      EngineVersion: "15.4"
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      AllocatedStorage: 20
+      DBName: franchise
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      BackupRetentionPeriod: 1
+
+  # ECR Repository
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: franchise-app
+
+  # ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: franchise-cluster
+
+  # ECS Task Execution Role
+  ECSExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: franchiseEcsExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+
+  # ECS Task Definition
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: franchise-task
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 512
+      Memory: 1024
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: franchise-app
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/franchise-app:latest"
+          PortMappings:
+            - ContainerPort: 8085
+          Environment:
+            - Name: SPRING_R2DBC_URL
+              Value: !Sub "r2dbc:postgresql://${PostgresDB.Endpoint.Address}:5432/franchise"
+            - Name: SPRING_R2DBC_USERNAME
+              Value: !Ref DBUsername
+            - Name: SPRING_R2DBC_PASSWORD
+              Value: !Ref DBPassword
+
+  # ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ECSTaskDefinition
+    Properties:
+      Cluster: !Ref ECSCluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: !Ref Subnets
+          SecurityGroups:
+            - !Ref DBSecurityGroup
+      TaskDefinition: !Ref ECSTaskDefinition
+
+  # Parameter Store: DB Username
+  DBUsernameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /franchise-app/db-username
+      Type: String
+      Value: !Ref DBUsername
+
+  # Parameter Store: DB Password
+  DBPasswordParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /franchise-app/db-password
+      Type: SecureString
+      Value: !Ref DBPassword
+
+Outputs:
+  RDSInstanceEndpoint:
+    Description: RDS PostgreSQL Endpoint
+    Value: !GetAtt PostgresDB.Endpoint.Address
+
+  ECSClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref ECSCluster
+
+  ECRRepositoryUri:
+    Description: ECR Repository URI
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/franchise-app"
