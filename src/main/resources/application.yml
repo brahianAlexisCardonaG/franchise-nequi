@@ -4,8 +4,8 @@ spring:
   application:
     name: franchise
   r2dbc:
-    url: r2dbc:postgresql://db.fcpkybgszpjagzojyyzm.supabase.co:5432/postgres
-    username: postgres
+    url: r2dbc:postgresql://aws-0-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require
+    username: postgres.fcpkybgszpjagzojyyzm
     password: Maddy-2026
   sql:
     init:
