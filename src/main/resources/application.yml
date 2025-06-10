@@ -4,20 +4,15 @@ spring:
   application:
     name: franchise
   r2dbc:
-      url: r2dbc:postgresql://localhost:5432/franchise
-      username: postgres
-      password: root
+    url: r2dbc:postgresql://db.fcpkybgszpjagzojyyzm.supabase.co:5432/postgres
+    username: postgres
+    password: Maddy-2026
   sql:
     init:
-      mode:
-      schema-locations: classpath:schema.sql
+      mode: never
   logging:
     level:
       org.springframework.web.reactive.function.server: DEBUG
-application:
-  security:
-    jwt:
-      secret-key: m2yrnAnikqppG3cqmTOGXExVuVlLxOvaN5q2Gqwel/aigX+wgP68HvbE1ypcpUBv
 springdoc:
   api-docs:
     enabled: true
