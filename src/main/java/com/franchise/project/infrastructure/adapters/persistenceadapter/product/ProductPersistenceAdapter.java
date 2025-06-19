@@ -55,9 +55,10 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     }
 
     @Override
-    public Flux<Product> findProductByBranchId(Long branchId) {
+    public Mono<List<Product>> findProductByBranchId(Long branchId) {
         return productRepository.findByBranchId(branchId)
-                .map(productEntityMapper::toModel);
+                .map(productEntityMapper::toModel)
+                .collectList();
     }
 
 }
