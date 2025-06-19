@@ -9,8 +9,6 @@ import com.franchise.project.infrastructure.entrypoints.branch.mapper.BranchMapp
 import com.franchise.project.infrastructure.entrypoints.branch.response.ApiBranchFranchiseResponse;
 import com.franchise.project.infrastructure.entrypoints.branch.response.ApiBranchResponse;
 import com.franchise.project.infrastructure.entrypoints.branch.validations.BranchValidationDto;
-import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateName;
-import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductResponse;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

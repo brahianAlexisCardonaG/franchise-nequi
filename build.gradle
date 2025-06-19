@@ -42,4 +42,16 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+
+	filter{
+		includeTestsMatching "com.franchise.project.domain.franchise.usecase.*"
+		includeTestsMatching "com.franchise.project.domain.branch.usecase.*"
+		includeTestsMatching "com.franchise.project.domain.product.usecase.*"
+		includeTestsMatching "com.franchise.project.infrastructure.adapters.persistenceadapter.branch.*"
+		includeTestsMatching "com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.*"
+		includeTestsMatching "com.franchise.project.infrastructure.adapters.persistenceadapter.product.*"
+		includeTestsMatching "com.franchise.project.infrastructure.entrypoints.branch.handler.*"
+		includeTestsMatching "com.franchise.project.infrastructure.entrypoints.franchise.handler.*"
+		includeTestsMatching "com.franchise.project.infrastructure.entrypoints.product.handler.*"
+	}
 }
