@@ -10,6 +10,7 @@ import com.franchise.project.domain.franchise.model.FranchiseBranchProductList;
 import com.franchise.project.domain.franchise.spi.FranchisePersistencePort;
 import com.franchise.project.domain.product.spi.ProductPersistencePort;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
@@ -39,8 +40,11 @@ public class FranchiseUseCase implements FranchiseServicePort {
                 .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_NOT_EXISTS)))
                 .flatMap(franchise -> branchPersistencePort
                         .findBranchesByFranchiseId(franchiseId)
+                        .flatMapMany(Flux::fromIterable)
                         .flatMap(branch -> productPersistencePort
-                                .findProductByBranchId(branch.getId()).reduce((p1, p2) ->
+                                .findProductByBranchId(branch.getId())
+                                .flatMapMany(Flux::fromIterable)
+                                .reduce((p1, p2) ->
                                         p1.getStock().compareTo(p2.getStock()) >= 0 ? p1 : p2
                                 )
                                 .flatMap(maxProduct -> Mono.just(
