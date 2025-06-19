@@ -20,7 +20,7 @@ public class BranchUseCase implements BranchServicePort {
     public Mono<BranchFranchise> createBranch(Mono<Branch> branch) {
         return branch
                 .flatMap(bran ->
-                        branchPersistencePort.findByName(bran.getName())
+                        branchPersistencePort.existByName(bran.getName())
                                 .filter(exist -> !exist)
                                 .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
                                         .BRANCH_ALREADY_EXISTS)))
@@ -50,13 +50,13 @@ public class BranchUseCase implements BranchServicePort {
                                 .BRANCH_NOT_EXISTS)))
 
                         .flatMap(branExist ->
-                                branchPersistencePort.findByName(branch.getName())
+                                branchPersistencePort.existByName(branch.getName())
                                         .filter(exist -> !exist)
                                         .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
                                                 .BRANCH_ALREADY_EXISTS)))
                                         .flatMap(ignore -> {
                                             branExist.setName(branch.getName());
-                                            return branchPersistencePort.updateProduct(Mono.just(branExist));
+                                            return branchPersistencePort.updateBranch(Mono.just(branExist));
                                         }))
                 );
     }

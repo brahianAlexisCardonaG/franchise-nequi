@@ -5,8 +5,9 @@ import com.franchise.project.domain.branch.spi.BranchPersistencePort;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.mapper.BranchEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.repository.BranchRepository;
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 public class BranchPersistenceAdapter implements BranchPersistencePort {
@@ -23,7 +24,7 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
     }
 
     @Override
-    public Mono<Boolean> findByName(String name) {
+    public Mono<Boolean> existByName(String name) {
         return branchRepository.findByName(name)
                 .map(branchEntityMapper::toModel)
                 .map(tech -> true)
@@ -37,13 +38,14 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
     }
 
     @Override
-    public Flux<Branch> findBranchesByFranchiseId(Long franchiseId) {
+    public Mono<List<Branch>> findBranchesByFranchiseId(Long franchiseId) {
         return branchRepository.findByFranchiseId(franchiseId)
-                .map(branchEntityMapper::toModel);
+                .map(branchEntityMapper::toModel)
+                .collectList();
     }
 
     @Override
-    public Mono<Branch> updateProduct(Mono<Branch> branchMono) {
+    public Mono<Branch> updateBranch(Mono<Branch> branchMono) {
         return branchMono
                 .map(branchEntityMapper::toEntity)
                 .flatMap(branchRepository::save)
