@@ -4,6 +4,7 @@ import com.franchise.project.domain.branch.api.BranchServicePort;
 import com.franchise.project.domain.branch.spi.BranchPersistencePort;
 import com.franchise.project.domain.branch.usecase.BranchUseCase;
 import com.franchise.project.domain.franchise.spi.FranchisePersistencePort;
+import com.franchise.project.domain.util.ValidationCondition;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.BranchPersistenceAdapter;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.mapper.BranchEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.repository.BranchRepository;
@@ -25,7 +26,11 @@ public class BranchConfig {
 
     @Bean
     public BranchServicePort branchServicePort(BranchPersistencePort branchPersistencePort,
-                                               FranchisePersistencePort franchisePersistencePort) {
-        return new BranchUseCase(branchPersistencePort,franchisePersistencePort);
+                                               FranchisePersistencePort franchisePersistencePort,
+                                               ValidationCondition validationCondition
+    ) {
+        return new BranchUseCase(branchPersistencePort,
+                franchisePersistencePort,
+                validationCondition);
     }
 }

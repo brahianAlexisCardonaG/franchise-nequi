@@ -3,11 +3,13 @@ package com.franchise.project.domain.franchise.usecase;
 import com.franchise.project.domain.branch.model.Branch;
 import com.franchise.project.domain.branch.model.BranchProduct;
 import com.franchise.project.domain.branch.spi.BranchPersistencePort;
+import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.franchise.model.Franchise;
 import com.franchise.project.domain.franchise.model.FranchiseBranchProductList;
 import com.franchise.project.domain.franchise.spi.FranchisePersistencePort;
 import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.domain.product.spi.ProductPersistencePort;
+import com.franchise.project.domain.util.ValidationCondition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,10 +37,11 @@ public class FranchiseUseCaseTest {
     @Mock
     private ProductPersistencePort productPersistencePort;
 
+    @Mock private ValidationCondition validationCondition;
+
     @InjectMocks
     private FranchiseUseCase franchiseUseCase;
 
-    // Optional: Use this setup method if additional configuration is needed.
     @BeforeEach
     public void setUp() {
     }
@@ -48,12 +51,11 @@ public class FranchiseUseCaseTest {
         Franchise inputFranchise = new Franchise(null, "Franchise1");
         Franchise createdFranchise = new Franchise(1L, "Franchise1");
 
-        // When searching for the franchise name, return false indicating that it does not exist.
         when(franchisePersistencePort.findByName("Franchise1")).thenReturn(Mono.just(false));
-        when(franchisePersistencePort.createFranchise(any(Mono.class)))
-                .thenReturn(Mono.just(createdFranchise));
+        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_ALREADY_EXISTS)).thenReturn(Mono.empty());
+        when(franchisePersistencePort.createFranchise(inputFranchise)).thenReturn(Mono.just(createdFranchise));
 
-        Mono<Franchise> result = franchiseUseCase.createFranchise(Mono.just(inputFranchise));
+        Mono<Franchise> result = franchiseUseCase.createFranchise(inputFranchise);
 
         StepVerifier.create(result)
                 .assertNext(franchise -> {
@@ -69,18 +71,16 @@ public class FranchiseUseCaseTest {
         Long franchiseId = 1L;
         Franchise franchise = new Franchise(franchiseId, "Franchise1");
 
-        // Create a branch belonging to the franchise.
         Branch branch = new Branch();
         branch.setId(10L);
         branch.setName("Branch10");
         branch.setFranchiseId(franchiseId);
 
-        // Create two products for the branch.
         Product product1 = new Product(100L, "Product1", BigInteger.valueOf(10), branch.getId());
         Product product2 = new Product(101L, "Product2", BigInteger.valueOf(20), branch.getId());
 
-        // Set up mocks.
         when(franchisePersistencePort.findById(franchiseId)).thenReturn(Mono.just(franchise));
+        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_NOT_EXISTS)).thenReturn(Mono.empty());
         when(branchPersistencePort.findBranchesByFranchiseId(franchiseId))
                 .thenReturn(Mono.just(Collections.singletonList(branch)));
         when(productPersistencePort.findProductByBranchId(branch.getId()))
@@ -90,39 +90,33 @@ public class FranchiseUseCaseTest {
 
         StepVerifier.create(result)
                 .assertNext(franchiseBranchProductList -> {
-                    // Validate franchise info.
                     org.junit.jupiter.api.Assertions.assertEquals(franchise.getId(), franchiseBranchProductList.getId());
                     org.junit.jupiter.api.Assertions.assertEquals(franchise.getName(), franchiseBranchProductList.getName());
-                    // Validate that one branch exists.
                     org.junit.jupiter.api.Assertions.assertEquals(1, franchiseBranchProductList.getBranches().size());
+
                     BranchProduct branchProduct = franchiseBranchProductList.getBranches().get(0);
                     org.junit.jupiter.api.Assertions.assertEquals(branch.getId(), branchProduct.getId());
                     org.junit.jupiter.api.Assertions.assertEquals(branch.getName(), branchProduct.getName());
-                    // Validate that the product with the maximum stock (product2) is selected.
                     org.junit.jupiter.api.Assertions.assertNotNull(branchProduct.getProduct());
                     org.junit.jupiter.api.Assertions.assertEquals(product2.getId(), branchProduct.getProduct().getId());
                 })
                 .verifyComplete();
     }
 
-    // Success scenario: The franchise exists, a branch is found but no products exist for that branch;
-    // the branch product should contain a null product.
     @Test
     public void getFranchiseBranchProductSuccessWithoutProducts() {
         Long franchiseId = 1L;
         Franchise franchise = new Franchise(franchiseId, "Franchise1");
 
-        // Create a branch.
         Branch branch = new Branch();
         branch.setId(10L);
         branch.setName("Branch10");
         branch.setFranchiseId(franchiseId);
 
-        // Set up mocks.
         when(franchisePersistencePort.findById(franchiseId)).thenReturn(Mono.just(franchise));
+        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_NOT_EXISTS)).thenReturn(Mono.empty());
         when(branchPersistencePort.findBranchesByFranchiseId(franchiseId))
                 .thenReturn(Mono.just(Collections.singletonList(branch)));
-        // Return an empty list for products.
         when(productPersistencePort.findProductByBranchId(branch.getId()))
                 .thenReturn(Mono.just(Collections.emptyList()));
 
@@ -133,10 +127,10 @@ public class FranchiseUseCaseTest {
                     org.junit.jupiter.api.Assertions.assertEquals(franchise.getId(), franchiseBranchProductList.getId());
                     org.junit.jupiter.api.Assertions.assertEquals(franchise.getName(), franchiseBranchProductList.getName());
                     org.junit.jupiter.api.Assertions.assertEquals(1, franchiseBranchProductList.getBranches().size());
+
                     BranchProduct branchProduct = franchiseBranchProductList.getBranches().get(0);
                     org.junit.jupiter.api.Assertions.assertEquals(branch.getId(), branchProduct.getId());
                     org.junit.jupiter.api.Assertions.assertEquals(branch.getName(), branchProduct.getName());
-                    // Since there are no products, the product should be null.
                     org.junit.jupiter.api.Assertions.assertNull(branchProduct.getProduct());
                 })
                 .verifyComplete();
@@ -149,15 +143,17 @@ public class FranchiseUseCaseTest {
         Franchise updatedFranchise = new Franchise(1L, "UpdatedName");
 
         when(franchisePersistencePort.findById(1L)).thenReturn(Mono.just(existingFranchise));
+        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_NOT_EXISTS)).thenReturn(Mono.empty());
         when(franchisePersistencePort.findByName("UpdatedName")).thenReturn(Mono.just(false));
-        when(franchisePersistencePort.updateFranchise(any(Mono.class)))
-                .thenReturn(Mono.just(updatedFranchise));
+        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_ALREADY_EXISTS)).thenReturn(Mono.empty());
+        when(franchisePersistencePort.updateFranchise(new Franchise(1L, "UpdatedName"))).thenReturn(Mono.just(updatedFranchise));
 
-        Mono<Franchise> result = franchiseUseCase.updateName(Mono.just(inputFranchise));
+
+        Mono<Franchise> result = franchiseUseCase.updateName(inputFranchise);
 
         StepVerifier.create(result)
                 .assertNext(franchise -> {
-                    org.junit.jupiter.api.Assertions.assertEquals(updatedFranchise.getId(), franchise.getId());
+                    org.junit.jupiter.api.Assertions.assertEquals(1L, franchise.getId());
                     org.junit.jupiter.api.Assertions.assertEquals("UpdatedName", franchise.getName());
                 })
                 .verifyComplete();

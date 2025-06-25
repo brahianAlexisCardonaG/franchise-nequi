@@ -5,6 +5,6 @@ import com.franchise.project.domain.branch.model.BranchFranchise;
 import reactor.core.publisher.Mono;
 
 public interface BranchServicePort {
-    Mono<BranchFranchise> createBranch(Mono<Branch> branch);
-    Mono<Branch> updateName(Mono<Branch> branchMono);
+    Mono<BranchFranchise> createBranch(Branch branch);
+    Mono<Branch> updateName(Branch branchMono);
 }

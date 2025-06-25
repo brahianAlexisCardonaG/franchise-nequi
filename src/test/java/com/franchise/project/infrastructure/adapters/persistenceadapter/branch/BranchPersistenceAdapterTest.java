@@ -32,7 +32,6 @@ public class BranchPersistenceAdapterTest {
         adapter = new BranchPersistenceAdapter(branchRepository, branchEntityMapper);
     }
 
-    // Métodos helper para mantener el código limpio
     private Branch getSampleBranch() {
         return new Branch(1L, "Sucursal Central", 100L);
     }
@@ -50,12 +49,11 @@ public class BranchPersistenceAdapterTest {
         Branch branch = getSampleBranch();
         BranchEntity entity = getSampleEntity();
 
-        // Mapeo y persistencia
         when(branchEntityMapper.toEntity(branch)).thenReturn(entity);
         when(branchRepository.save(entity)).thenReturn(Mono.just(entity));
         when(branchEntityMapper.toModel(entity)).thenReturn(branch);
 
-        Mono<Branch> result = adapter.createBranch(Mono.just(branch));
+        Mono<Branch> result = adapter.createBranch(branch);
 
         StepVerifier.create(result)
                 .expectNext(branch)
@@ -113,7 +111,6 @@ public class BranchPersistenceAdapterTest {
         Branch branch = getSampleBranch();
         BranchEntity entity = getSampleEntity();
 
-        // Suponemos que el repositorio retorna un Flux con al menos un elemento
         when(branchRepository.findByFranchiseId(franchiseId)).thenReturn(Flux.just(entity));
         when(branchEntityMapper.toModel(entity)).thenReturn(branch);
 
@@ -133,7 +130,7 @@ public class BranchPersistenceAdapterTest {
         when(branchRepository.save(entity)).thenReturn(Mono.just(entity));
         when(branchEntityMapper.toModel(entity)).thenReturn(branch);
 
-        Mono<Branch> result = adapter.updateBranch(Mono.just(branch));
+        Mono<Branch> result = adapter.updateBranch(branch);
 
         StepVerifier.create(result)
                 .expectNext(branch)

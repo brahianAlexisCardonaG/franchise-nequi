@@ -4,11 +4,9 @@ import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.domain.product.model.ProductBranch;
 import reactor.core.publisher.Mono;
 
-import java.math.BigInteger;
-
 public interface ProductServicePort {
-    Mono<ProductBranch> createProduct(Mono<Product> product);
+    Mono<ProductBranch> createProduct(Product product);
     Mono<Void> deleteProductBranch(Long productId);
-    Mono<Product> updateStock(Mono<Product> productMono);
-    Mono<Product> updateName(Mono<Product> productMono);
+    Mono<Product> updateStock(Product product);
+    Mono<Product> updateName(Product product);
 }

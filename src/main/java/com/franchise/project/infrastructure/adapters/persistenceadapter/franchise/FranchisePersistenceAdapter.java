@@ -13,10 +13,8 @@ public class FranchisePersistenceAdapter implements FranchisePersistencePort {
     private final FranchiseEntityMapper franchiseEntityMapper;
 
     @Override
-    public Mono<Franchise> createFranchise(Mono<Franchise> franchise) {
-        return franchise
-                .map(franchiseEntityMapper::toEntity)
-                .flatMap(franchiseRepository::save)
+    public Mono<Franchise> createFranchise(Franchise franchise) {
+        return franchiseRepository.save(franchiseEntityMapper.toEntity(franchise))
                 .map(franchiseEntityMapper::toModel);
     }
 
@@ -35,10 +33,8 @@ public class FranchisePersistenceAdapter implements FranchisePersistencePort {
     }
 
     @Override
-    public Mono<Franchise> updateFranchise(Mono<Franchise> franchiseMono) {
-        return franchiseMono
-                .map(franchiseEntityMapper::toEntity)
-                .flatMap(franchiseRepository::save)
+    public Mono<Franchise> updateFranchise(Franchise franchise) {
+        return franchiseRepository.save(franchiseEntityMapper.toEntity(franchise))
                 .map(franchiseEntityMapper::toModel);
     }
 }

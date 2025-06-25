@@ -74,7 +74,7 @@ public class ProductHandlerImplTest {
 
         when(productValidationDto.validateDtoCreateNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
         when(productMapper.toProductCreate(dto)).thenReturn(domain);
-        when(productServicePort.createProduct(any(Mono.class))).thenReturn(Mono.just(productBranch));
+        when(productServicePort.createProduct(any(Product.class))).thenReturn(Mono.just(productBranch));
         when(productMapperResponse.toProductBranchResponse(productBranch)).thenReturn(response);
         when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -122,7 +122,7 @@ public class ProductHandlerImplTest {
 
         when(productValidationDto.validateDtoUpdateStockNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
         when(productMapper.toProductUpdateStock(dto)).thenReturn(product);
-        when(productServicePort.updateStock(any(Mono.class))).thenReturn(Mono.just(product));
+        when(productServicePort.updateStock(any(Product.class))).thenReturn(Mono.just(product));
         when(productMapperResponse.toProductResponse(product)).thenReturn(response);
         when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -152,7 +152,7 @@ public class ProductHandlerImplTest {
 
         when(productValidationDto.validateDtoUpdateNameNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
         when(productMapper.toProductUpdateName(dto)).thenReturn(updated);
-        when(productServicePort.updateName(any(Mono.class))).thenReturn(Mono.just(updated));
+        when(productServicePort.updateName(any(Product.class))).thenReturn(Mono.just(updated));
         when(productMapperResponse.toProductResponse(updated)).thenReturn(response);
         when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
 
