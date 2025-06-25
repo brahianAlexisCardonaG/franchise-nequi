@@ -17,10 +17,8 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     private final ProductEntityMapper productEntityMapper;
 
     @Override
-    public Mono<Product> createProduct(Mono<Product> product) {
-        return product
-                .map(productEntityMapper::toEntity)
-                .flatMap(productRepository::save)
+    public Mono<Product> createProduct(Product product) {
+        return productRepository.save(productEntityMapper.toEntity(product))
                 .map(productEntityMapper::toModel);
     }
 
@@ -39,18 +37,15 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     }
 
     @Override
-    public Mono<Void> deleteRelateProductBranch(Mono<Product> product) {
-        return product
-                .map(productEntityMapper::toEntity)
-                .flatMap(productRepository::save)
+    public Mono<Void> deleteRelateProductBranch(Product product) {
+        return productRepository.save(productEntityMapper.toEntity(product))
+                .map(productEntityMapper::toModel)
                 .then();
     }
 
     @Override
-    public Mono<Product> updateProduct(Mono<Product> product) {
-        return product
-                .map(productEntityMapper::toEntity)
-                .flatMap(productRepository::save)
+    public Mono<Product> updateProduct(Product product) {
+        return productRepository.save(productEntityMapper.toEntity(product))
                 .map(productEntityMapper::toModel);
     }
 

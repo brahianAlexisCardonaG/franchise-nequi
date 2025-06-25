@@ -29,7 +29,6 @@ public class FranchisePersistenceAdapterTest {
         adapter = new FranchisePersistenceAdapter(franchiseRepository, franchiseEntityMapper);
     }
 
-    // Métodos helper
     private Franchise getSampleFranchise() {
         return new Franchise(1L, "Test Franchise");
     }
@@ -46,12 +45,11 @@ public class FranchisePersistenceAdapterTest {
         Franchise franchise = getSampleFranchise();
         FranchiseEntity entity = getSampleFranchiseEntity();
 
-        // Simular conversión y guardado
         when(franchiseEntityMapper.toEntity(franchise)).thenReturn(entity);
         when(franchiseRepository.save(entity)).thenReturn(Mono.just(entity));
         when(franchiseEntityMapper.toModel(entity)).thenReturn(franchise);
 
-        StepVerifier.create(adapter.createFranchise(Mono.just(franchise)))
+        StepVerifier.create(adapter.createFranchise(franchise))
                 .expectNext(franchise)
                 .verifyComplete();
     }
@@ -104,7 +102,7 @@ public class FranchisePersistenceAdapterTest {
         when(franchiseRepository.save(entity)).thenReturn(Mono.just(entity));
         when(franchiseEntityMapper.toModel(entity)).thenReturn(franchise);
 
-        StepVerifier.create(adapter.updateFranchise(Mono.just(franchise)))
+        StepVerifier.create(adapter.updateFranchise(franchise))
                 .expectNext(franchise)
                 .verifyComplete();
     }

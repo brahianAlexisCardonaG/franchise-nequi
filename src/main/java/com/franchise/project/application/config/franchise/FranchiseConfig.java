@@ -5,6 +5,7 @@ import com.franchise.project.domain.franchise.api.FranchiseServicePort;
 import com.franchise.project.domain.franchise.spi.FranchisePersistencePort;
 import com.franchise.project.domain.franchise.usecase.FranchiseUseCase;
 import com.franchise.project.domain.product.spi.ProductPersistencePort;
+import com.franchise.project.domain.util.ValidationCondition;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.FranchisePersistenceAdapter;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.mapper.FranchiseEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.repository.FranchiseRepository;
@@ -28,7 +29,12 @@ public class FranchiseConfig {
     @Bean
     public FranchiseServicePort franchiseServicePort(FranchisePersistencePort franchisePersistencePort,
                                                      BranchPersistencePort branchPersistencePort,
-                                                     ProductPersistencePort productPersistencePort) {
-        return new FranchiseUseCase(franchisePersistencePort, branchPersistencePort, productPersistencePort);
+                                                     ProductPersistencePort productPersistencePort,
+                                                     ValidationCondition validationCondition) {
+        return new FranchiseUseCase(franchisePersistencePort,
+                branchPersistencePort,
+                productPersistencePort,
+                validationCondition
+        );
     }
 }

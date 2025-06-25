@@ -7,6 +7,7 @@ import com.franchise.project.domain.product.api.ProductServicePort;
 import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.domain.product.model.ProductBranch;
 import com.franchise.project.domain.product.spi.ProductPersistencePort;
+import com.franchise.project.domain.util.ValidationCondition;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -15,76 +16,83 @@ public class ProductUseCase implements ProductServicePort {
 
     private final BranchPersistencePort branchPersistencePort;
     private final ProductPersistencePort productPersistencePort;
+    private final ValidationCondition validationCondition;
 
     @Override
-    public Mono<ProductBranch> createProduct(Mono<Product> product) {
-        return product
-                .flatMap(prod ->
-                        productPersistencePort.findByName(prod.getName())
-                                .filter(exist -> !exist)
-                                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
-                                        .PRODUCT_ALREADY_EXISTS)))
-                                .flatMap(ignore ->
-                                        branchPersistencePort.findById(prod.getBranchId())
-                                                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
-                                                        .BRANCH_NOT_EXISTS))))
-                                .flatMap(bran ->
-                                        productPersistencePort.createProduct(Mono.just(prod))
-                                                .flatMap(branSaved -> {
-                                                    ProductBranch productBranch = new ProductBranch();
-                                                    productBranch.setId(branSaved.getId());
-                                                    productBranch.setName(branSaved.getName());
-                                                    productBranch.setStock(branSaved.getStock());
-
-                                                    productBranch.setBranch(bran);
-                                                    return Mono.just(productBranch);
-                                                }))
-                );
+    public Mono<ProductBranch> createProduct(Product product) {
+        return productPersistencePort.findByName(product.getName())
+                .flatMap(exist -> validationCondition.validationExist(exist, TechnicalMessage.PRODUCT_ALREADY_EXISTS))
+                .then(Mono.defer(() ->
+                        branchPersistencePort.findById(product.getBranchId())
+                                .flatMap(branch -> validationCondition.validationExist(branch == null, TechnicalMessage.BRANCH_NOT_EXISTS)
+                                        .thenReturn(branch))
+                                .flatMap(branch ->
+                                        productPersistencePort.createProduct(product)
+                                                .map(savedProduct -> new ProductBranch(
+                                                        savedProduct.getId(),
+                                                        savedProduct.getName(),
+                                                        savedProduct.getStock(),
+                                                        branch
+                                                ))
+                                )
+                ));
     }
 
     @Override
     public Mono<Void> deleteProductBranch(Long productId) {
         return productPersistencePort.findById(productId)
-                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
-                        .PRODUCT_NOT_EXISTS)))
-                .flatMap(product -> {
-                    product.setBranchId(null);
-                    return productPersistencePort.deleteRelateProductBranch(Mono.just(product));
-                }).then();
+                .flatMap(product -> validationCondition.validationExist(product == null, TechnicalMessage.PRODUCT_NOT_EXISTS)
+                        .then(Mono.defer(() -> {
+                            Product productUpdate = new Product(
+                                    product.getId(),
+                                    product.getName(),
+                                    product.getStock(),
+                                    null
+                            );
+                            return productPersistencePort.deleteRelateProductBranch(productUpdate);
+                        }))
+                ).then();
     }
 
     @Override
-    public Mono<Product> updateStock(Mono<Product> productMono) {
-        return productMono
-                .flatMap(product -> productPersistencePort.findById(product.getId())
-                        .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
-                                .PRODUCT_NOT_EXISTS)))
-                        .flatMap(
-                                prod -> {
-                                    prod.setStock(product.getStock());
-                                    return productPersistencePort.updateProduct(Mono.just(prod));
-                                }
-                        ));
+    public Mono<Product> updateStock(Product product) {
+        return productPersistencePort.findById(product.getId())
+                .flatMap(existing ->
+                        validationCondition.validationExist(existing == null, TechnicalMessage.PRODUCT_NOT_EXISTS)
+                                .thenReturn(existing)
+                )
+                .flatMap(existing ->
+                        Mono.defer(() -> {
+                            Product updated = new Product(
+                                    existing.getId(),
+                                    existing.getName(),
+                                    product.getStock(), // nuevo stock
+                                    existing.getBranchId()
+                            );
+                            return productPersistencePort.updateProduct(updated);
+                        })
+                );
     }
 
     @Override
-    public Mono<Product> updateName(Mono<Product> productMono) {
-        return productMono
-                .flatMap(product ->
-                        productPersistencePort.findById(product.getId())
-                                .switchIfEmpty(Mono.error(
-                                        new BusinessException(TechnicalMessage.PRODUCT_NOT_EXISTS)
-                                ))
-                                .flatMap(prodExist ->
-                                        productPersistencePort.findByName(product.getName())
-                                                .filter(exist -> !exist)
-                                                .switchIfEmpty(Mono.error(
-                                                        new BusinessException(TechnicalMessage
-                                                        .PRODUCT_ALREADY_EXISTS)))
-                                                .flatMap(ignore -> {
-                                                    prodExist.setName(product.getName());
-                                                    return productPersistencePort.updateProduct(Mono.just(prodExist));
-                                                }))
+    public Mono<Product> updateName(Product product) {
+        return productPersistencePort.findById(product.getId())
+                .flatMap(existing ->
+                        validationCondition.validationExist(existing == null, TechnicalMessage.PRODUCT_NOT_EXISTS)
+                                .thenReturn(existing)
+                )
+                .flatMap(existing ->
+                        productPersistencePort.findByName(product.getName())
+                                .flatMap(exist -> validationCondition.validationExist(exist, TechnicalMessage.PRODUCT_ALREADY_EXISTS))
+                                .then(Mono.defer(() -> {
+                                    Product updated = new Product(
+                                            existing.getId(),
+                                            product.getName(),
+                                            existing.getStock(),
+                                            existing.getBranchId()
+                                    );
+                                    return productPersistencePort.updateProduct(updated);
+                                }))
                 );
     }
 }

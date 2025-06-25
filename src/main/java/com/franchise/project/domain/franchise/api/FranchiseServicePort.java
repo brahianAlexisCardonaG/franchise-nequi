@@ -5,7 +5,7 @@ import com.franchise.project.domain.franchise.model.FranchiseBranchProductList;
 import reactor.core.publisher.Mono;
 
 public interface FranchiseServicePort {
-    Mono<Franchise> createFranchise(Mono<Franchise> franchise);
+    Mono<Franchise> createFranchise(Franchise franchise);
     Mono<FranchiseBranchProductList> getFranchiseBranchProduct(Long franchiseId);
-    Mono<Franchise> updateName(Mono<Franchise> franchiseMono);
+    Mono<Franchise> updateName(Franchise franchiseMono);
 }

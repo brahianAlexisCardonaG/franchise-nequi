@@ -5,8 +5,8 @@ import com.franchise.project.domain.branch.model.BranchFranchise;
 import com.franchise.project.domain.branch.api.BranchServicePort;
 import com.franchise.project.domain.branch.spi.BranchPersistencePort;
 import com.franchise.project.domain.enums.TechnicalMessage;
-import com.franchise.project.domain.exception.BusinessException;
 import com.franchise.project.domain.franchise.spi.FranchisePersistencePort;
+import com.franchise.project.domain.util.ValidationCondition;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -15,49 +15,46 @@ public class BranchUseCase implements BranchServicePort {
 
     private final BranchPersistencePort branchPersistencePort;
     private final FranchisePersistencePort franchisePersistencePort;
+    private final ValidationCondition validationCondition;
 
     @Override
-    public Mono<BranchFranchise> createBranch(Mono<Branch> branch) {
-        return branch
-                .flatMap(bran ->
-                        branchPersistencePort.existByName(bran.getName())
-                                .filter(exist -> !exist)
-                                .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
-                                        .BRANCH_ALREADY_EXISTS)))
-                                .flatMap(ignore ->
-                                        franchisePersistencePort.findById(bran.getFranchiseId())
-                                                .switchIfEmpty(Mono
-                                                        .error(new BusinessException(TechnicalMessage
-                                                                .FRANCHISE_NOT_EXISTS)))
-                                )
+    public Mono<BranchFranchise> createBranch(Branch branch) {
+        return branchPersistencePort.existByName(branch.getName())
+                .flatMap(exist -> validationCondition.validationExist(exist, TechnicalMessage.BRANCH_ALREADY_EXISTS))
+                .then(Mono.defer(() ->
+                        franchisePersistencePort.findById(branch.getFranchiseId())
+                                .flatMap(fran -> validationCondition.validationExist(fran == null, TechnicalMessage.FRANCHISE_NOT_EXISTS)
+                                        .thenReturn(fran))
                                 .flatMap(fran ->
-                                        branchPersistencePort.createBranch(Mono.just(bran))
-                                                .flatMap(branchSaved -> {
-                                                    BranchFranchise branchFranchise = new BranchFranchise();
-                                                    branchFranchise.setId(branchSaved.getId());
-                                                    branchFranchise.setName(branchSaved.getName());
-                                                    branchFranchise.setFranchise(fran);
-                                                    return Mono.just(branchFranchise);
-                                                }))
-                );
+                                        branchPersistencePort.createBranch(branch)
+                                                .map(branchSaved -> new BranchFranchise(
+                                                        branchSaved.getId(),
+                                                        branchSaved.getName(),
+                                                        fran
+                                                ))
+                                )
+                ));
     }
 
-    @Override
-    public Mono<Branch> updateName(Mono<Branch> branchMono) {
-        return branchMono
-                .flatMap(branch -> branchPersistencePort.findById(branch.getId())
-                        .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
-                                .BRANCH_NOT_EXISTS)))
 
-                        .flatMap(branExist ->
-                                branchPersistencePort.existByName(branch.getName())
-                                        .filter(exist -> !exist)
-                                        .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage
-                                                .BRANCH_ALREADY_EXISTS)))
-                                        .flatMap(ignore -> {
-                                            branExist.setName(branch.getName());
-                                            return branchPersistencePort.updateBranch(Mono.just(branExist));
-                                        }))
+    @Override
+    public Mono<Branch> updateName(Branch branch) {
+        return branchPersistencePort.findById(branch.getId())
+                .flatMap(existing ->
+                        validationCondition.validationExist(existing == null, TechnicalMessage.BRANCH_NOT_EXISTS)
+                                .thenReturn(existing)
+                )
+                .flatMap(existing ->
+                        branchPersistencePort.existByName(branch.getName())
+                                .flatMap(exist -> validationCondition.validationExist(exist, TechnicalMessage.BRANCH_ALREADY_EXISTS))
+                                .then(Mono.defer(() -> {
+                                    Branch updated = new Branch(
+                                            existing.getId(),
+                                            branch.getName(),
+                                            existing.getFranchiseId()
+                                    );
+                                    return branchPersistencePort.updateBranch(updated);
+                                }))
                 );
     }
 }

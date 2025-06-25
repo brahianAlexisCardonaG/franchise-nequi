@@ -72,7 +72,7 @@ public class FranchiseHandlerImplTest {
 
         when(franchiseValidationDto.validateFieldNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
         when(franchiseMapper.toFranchise(dto)).thenReturn(domain);
-        when(franchiseServicePort.createFranchise(any(Mono.class))).thenReturn(Mono.just(domain));
+        when(franchiseServicePort.createFranchise(any(Franchise.class))).thenReturn(Mono.just(domain));
         when(franchiseMapperResponse.toFranchiseResponse(domain)).thenReturn(response);
         when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -122,7 +122,7 @@ public class FranchiseHandlerImplTest {
 
         when(franchiseValidationDto.validateFranchiseDtoNameNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
         when(franchiseMapper.toFranchiseUpdateName(dto)).thenReturn(domain);
-        when(franchiseServicePort.updateName(any(Mono.class))).thenReturn(Mono.just(domain));
+        when(franchiseServicePort.updateName(any(Franchise.class))).thenReturn(Mono.just(domain));
         when(franchiseMapperResponse.toFranchiseResponse(domain)).thenReturn(response);
         when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
 

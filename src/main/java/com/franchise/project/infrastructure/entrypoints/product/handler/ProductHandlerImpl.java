@@ -42,7 +42,7 @@ public class ProductHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(ProductDto.class)
                 .flatMap(productValidationDto::validateDtoCreateNotNullOrBlank)
                 .map(productMapper::toProductCreate)
-                .flatMap(prod -> productServicePort.createProduct(Mono.just(prod)))
+                .flatMap(productServicePort::createProduct)
                 .map(productMapperResponse::toProductBranchResponse)
                 .flatMap( productResp ->
                         ServerResponse.status(HttpStatus.CREATED)
@@ -83,7 +83,7 @@ public class ProductHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(ProductDtoUpdateStock.class)
                 .flatMap(productValidationDto::validateDtoUpdateStockNotNullOrBlank)
                 .map(productMapper::toProductUpdateStock)
-                .flatMap(prod -> productServicePort.updateStock(Mono.just(prod)))
+                .flatMap(productServicePort::updateStock)
                 .map(productMapperResponse::toProductResponse)
                 .flatMap( productResp ->
                         ServerResponse.status(HttpStatus.CREATED)
@@ -104,7 +104,7 @@ public class ProductHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(ProductDtoUpdateName.class)
                 .flatMap(productValidationDto::validateDtoUpdateNameNotNullOrBlank)
                 .map(productMapper::toProductUpdateName)
-                .flatMap(prod -> productServicePort.updateName(Mono.just(prod)))
+                .flatMap(productServicePort::updateName)
                 .map(productMapperResponse::toProductResponse)
                 .flatMap( productResp ->
                         ServerResponse.status(HttpStatus.OK)

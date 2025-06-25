@@ -66,7 +66,6 @@ public class BranchHandlerImplTest {
 
     @Test
     void createBranch_shouldReturnCreatedResponse() {
-        // Arrange
         BranchDto dto = new BranchDto();
         dto.setName("Sucursal Norte");
 
@@ -82,11 +81,10 @@ public class BranchHandlerImplTest {
 
         when(branchValidationDto.validateFieldNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
         when(branchMapper.toBranch(dto)).thenReturn(branchDomain);
-        when(branchServicePort.createBranch(any(Mono.class))).thenReturn(Mono.just(branchFranchise));
+        when(branchServicePort.createBranch(any(Branch.class))).thenReturn(Mono.just(branchFranchise));
         when(branchMapperResponse.toBranchFranchiseResponse(branchFranchise)).thenReturn(responseMapped);
         when(applyErrorHandler.applyErrorHandling(any(Mono.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act & Assert
         webClient.post()
                 .uri(Constants.PATH_POST_BRANCH)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -105,7 +103,6 @@ public class BranchHandlerImplTest {
 
     @Test
     void updateBranchName_shouldReturnOkResponse() {
-        // Arrange
         BranchDtoUpdateName dto = new BranchDtoUpdateName(1L, "Sucursal Centro");
 
         Branch branchDomain = new Branch(1L, "Sucursal Centro", 200L);
@@ -113,11 +110,10 @@ public class BranchHandlerImplTest {
 
         when(branchValidationDto.validateDtoBranchNameNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
         when(branchMapper.toBranchUpdateName(dto)).thenReturn(branchDomain);
-        when(branchServicePort.updateName(any(Mono.class))).thenReturn(Mono.just(branchDomain));
+        when(branchServicePort.updateName(any(Branch.class))).thenReturn(Mono.just(branchDomain));
         when(branchMapperResponse.toBranchResponse(branchDomain)).thenReturn(branchResponse);
         when(applyErrorHandler.applyErrorHandling(any(Mono.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act & Assert
         webClient.put()
                 .uri(Constants.PATH_BRANCH_UPDATE_NAME)
                 .contentType(MediaType.APPLICATION_JSON)

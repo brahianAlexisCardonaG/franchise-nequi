@@ -39,7 +39,7 @@ public class BranchHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(BranchDto.class)
                 .flatMap(branchValidationDto::validateFieldNotNullOrBlank)
                 .map(branchMapper::toBranch)
-                .flatMap(branch -> branchServicePort.createBranch(Mono.just(branch)))
+                .flatMap(branchServicePort::createBranch)
                 .map(branchMapperResponse::toBranchFranchiseResponse)
                 .flatMap( franchise ->
                         ServerResponse.status(HttpStatus.CREATED)
@@ -60,7 +60,7 @@ public class BranchHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(BranchDtoUpdateName.class)
                 .flatMap(branchValidationDto::validateDtoBranchNameNotNullOrBlank)
                 .map(branchMapper::toBranchUpdateName)
-                .flatMap(bran -> branchServicePort.updateName(Mono.just(bran)))
+                .flatMap(branchServicePort::updateName)
                 .map(branchMapperResponse::toBranchResponse)
                 .flatMap( productResp ->
                         ServerResponse.status(HttpStatus.OK)

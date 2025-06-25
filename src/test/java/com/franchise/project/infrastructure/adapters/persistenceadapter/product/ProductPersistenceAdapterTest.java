@@ -33,7 +33,6 @@ public class ProductPersistenceAdapterTest {
         adapter = new ProductPersistenceAdapter(productRepository, productEntityMapper);
     }
 
-    // Métodos helper para generar instancias de Product y ProductEntity
     private Product getSampleProduct() {
         return new Product(1L, "Product A", BigInteger.TEN, 100L);
     }
@@ -52,12 +51,11 @@ public class ProductPersistenceAdapterTest {
         Product product = getSampleProduct();
         ProductEntity entity = getSampleProductEntity();
 
-        // Simulamos el mapeo y la operación de guardado
         when(productEntityMapper.toEntity(product)).thenReturn(entity);
         when(productRepository.save(entity)).thenReturn(Mono.just(entity));
         when(productEntityMapper.toModel(entity)).thenReturn(product);
 
-        Mono<Product> result = adapter.createProduct(Mono.just(product));
+        Mono<Product> result = adapter.createProduct(product);
 
         StepVerifier.create(result)
                 .expectNext(product)
@@ -105,14 +103,14 @@ public class ProductPersistenceAdapterTest {
 
     @Test
     void shouldDeleteRelateProductBranchSuccessfully() {
-        Product product = getSampleProduct();
-        ProductEntity entity = getSampleProductEntity();
+        Product originalProduct = getSampleProduct();
+        ProductEntity productEntity = getSampleProductEntity();
 
-        // En este flujo se simula el mapeo y "guardado" para finalmente completar sin valor (Mono<Void>)
-        when(productEntityMapper.toEntity(product)).thenReturn(entity);
-        when(productRepository.save(entity)).thenReturn(Mono.just(entity));
+        when(productEntityMapper.toEntity(originalProduct)).thenReturn(productEntity);
+        when(productRepository.save(productEntity)).thenReturn(Mono.just(productEntity));
+        when(productEntityMapper.toModel(productEntity)).thenReturn(originalProduct);
 
-        Mono<Void> result = adapter.deleteRelateProductBranch(Mono.just(product));
+        Mono<Void> result = adapter.deleteRelateProductBranch(originalProduct);
 
         StepVerifier.create(result)
                 .verifyComplete();
@@ -127,7 +125,7 @@ public class ProductPersistenceAdapterTest {
         when(productRepository.save(entity)).thenReturn(Mono.just(entity));
         when(productEntityMapper.toModel(entity)).thenReturn(product);
 
-        Mono<Product> result = adapter.updateProduct(Mono.just(product));
+        Mono<Product> result = adapter.updateProduct(product);
 
         StepVerifier.create(result)
                 .expectNext(product)

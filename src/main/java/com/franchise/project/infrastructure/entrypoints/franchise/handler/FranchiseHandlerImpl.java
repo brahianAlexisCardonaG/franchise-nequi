@@ -10,8 +10,6 @@ import com.franchise.project.infrastructure.entrypoints.franchise.mapper.Franchi
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseBranchProductResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.validations.FranchiseValidationDto;
-import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateName;
-import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductResponse;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -43,7 +41,7 @@ public class FranchiseHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(FranchiseDto.class)
                 .flatMap(franchiseValidationDto::validateFieldNotNullOrBlank)
                 .map(franchiseMapper::toFranchise)
-                .flatMap(franchise -> franchiseServicePort.createFranchise(Mono.just(franchise)))
+                .flatMap(franchiseServicePort::createFranchise)
                 .map(franchiseMapperResponse::toFranchiseResponse)
                 .flatMap( franchise ->
                             ServerResponse.status(HttpStatus.CREATED)
@@ -89,7 +87,7 @@ public class FranchiseHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(FranchiseDtoUpdateName.class)
                 .flatMap(franchiseValidationDto::validateFranchiseDtoNameNotNullOrBlank)
                 .map(franchiseMapper::toFranchiseUpdateName)
-                .flatMap(prod -> franchiseServicePort.updateName(Mono.just(prod)))
+                .flatMap(franchiseServicePort::updateName)
                 .map(franchiseMapperResponse::toFranchiseResponse)
                 .flatMap( productResp ->
                         ServerResponse.status(HttpStatus.CREATED)

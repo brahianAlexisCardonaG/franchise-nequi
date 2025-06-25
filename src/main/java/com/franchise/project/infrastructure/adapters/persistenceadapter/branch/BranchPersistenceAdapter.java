@@ -16,10 +16,8 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
 
 
     @Override
-    public Mono<Branch> createBranch(Mono<Branch> branch) {
-        return branch
-                .map(branchEntityMapper::toEntity)
-                .flatMap(branchRepository::save)
+    public Mono<Branch> createBranch(Branch branch) {
+        return branchRepository.save(branchEntityMapper.toEntity(branch))
                 .map(branchEntityMapper::toModel);
     }
 
@@ -45,10 +43,8 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
     }
 
     @Override
-    public Mono<Branch> updateBranch(Mono<Branch> branchMono) {
-        return branchMono
-                .map(branchEntityMapper::toEntity)
-                .flatMap(branchRepository::save)
+    public Mono<Branch> updateBranch(Branch branch) {
+        return branchRepository.save(branchEntityMapper.toEntity(branch))
                 .map(branchEntityMapper::toModel);
     }
 }

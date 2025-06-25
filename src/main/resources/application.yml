@@ -4,9 +4,9 @@ spring:
   application:
     name: franchise
   r2dbc:
-    url: ${SPRING_R2DBC_URL}
-    username: ${SPRING_R2DBC_USERNAME}
-    password: ${SPRING_R2DBC_PASSWORD}
+    url: r2dbc:postgresql://localhost:5432/franchise?sslmode=require
+    username: postgres
+    password: Maddy-2026
   sql:
     init:
       mode: never
