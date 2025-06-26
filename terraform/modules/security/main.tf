@@ -1,5 +1,4 @@
-//7. Security Group
-resource "aws_security_group" "franchise_sg" {
+resource "aws_security_group" "franchise" {
   name        = "franchise-sg"
   description = "Allow traffic for franchise app"
   vpc_id      = var.vpc_id
@@ -17,4 +16,8 @@ resource "aws_security_group" "franchise_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+output "security_group_id" {
+  value = aws_security_group.franchise.id
 }
