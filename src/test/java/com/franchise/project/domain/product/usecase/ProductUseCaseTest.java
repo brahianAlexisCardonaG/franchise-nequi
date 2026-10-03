@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.math.BigInteger;
 import java.util.function.Predicate;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -29,8 +28,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductUseCaseTest {
 
-    private static final BigInteger STOCK = BigInteger.valueOf(50);
-    private static final BigInteger NEGATIVE_STOCK = BigInteger.valueOf(-1);
+    private static final Integer STOCK = 50;
+    private static final Integer NEGATIVE_STOCK = -1;
 
     @Mock
     private BranchPersistencePort branchPersistencePort;
@@ -108,11 +107,11 @@ class ProductUseCaseTest {
 
     @Test
     void updateStockChangesOnlyTheStock() {
-        Product expectedUpdate = new Product(100L, "Coffee", BigInteger.valueOf(80), 10L);
+        Product expectedUpdate = new Product(100L, "Coffee", 80, 10L);
         when(productPersistencePort.findById(100L)).thenReturn(Mono.just(new Product(100L, "Coffee", STOCK, 10L)));
         when(productPersistencePort.updateProduct(expectedUpdate)).thenReturn(Mono.just(expectedUpdate));
 
-        StepVerifier.create(productUseCase.updateStock(new Product(100L, null, BigInteger.valueOf(80), null)))
+        StepVerifier.create(productUseCase.updateStock(new Product(100L, null, 80, null)))
                 .expectNext(expectedUpdate)
                 .verifyComplete();
     }

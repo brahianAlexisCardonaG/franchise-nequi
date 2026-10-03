@@ -19,7 +19,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.math.BigInteger;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,7 +51,7 @@ class FranchiseUseCaseTest {
     void createFranchiseReturnsCreatedFranchise() {
         Franchise input = new Franchise(null, "Franchise1");
         Franchise created = new Franchise(1L, "Franchise1");
-        when(franchisePersistencePort.findByName("Franchise1")).thenReturn(Mono.just(false));
+        when(franchisePersistencePort.existsByName("Franchise1")).thenReturn(Mono.just(false));
         when(franchisePersistencePort.createFranchise(input)).thenReturn(Mono.just(created));
 
         StepVerifier.create(franchiseUseCase.createFranchise(input))
@@ -63,7 +62,7 @@ class FranchiseUseCaseTest {
     @Test
     void createFranchiseFailsWhenNameAlreadyExists() {
         Franchise input = new Franchise(null, "Franchise1");
-        when(franchisePersistencePort.findByName("Franchise1")).thenReturn(Mono.just(true));
+        when(franchisePersistencePort.existsByName("Franchise1")).thenReturn(Mono.just(true));
 
         StepVerifier.create(franchiseUseCase.createFranchise(input))
                 .expectErrorMatches(businessError(TechnicalMessage.FRANCHISE_ALREADY_EXISTS))
@@ -76,8 +75,8 @@ class FranchiseUseCaseTest {
         Franchise franchise = new Franchise(1L, "Franchise1");
         Branch branchWithProducts = new Branch(10L, "Downtown", 1L);
         Branch emptyBranch = new Branch(11L, "Airport", 1L);
-        Product lowStock = new Product(100L, "Water", BigInteger.valueOf(10), 10L);
-        Product highStock = new Product(101L, "Coffee", BigInteger.valueOf(20), 10L);
+        Product lowStock = new Product(100L, "Water", 10, 10L);
+        Product highStock = new Product(101L, "Coffee", 20, 10L);
 
         when(franchisePersistencePort.findById(1L)).thenReturn(Mono.just(franchise));
         when(branchPersistencePort.findBranchesByFranchiseId(1L)).thenReturn(Flux.just(branchWithProducts, emptyBranch));
@@ -112,7 +111,7 @@ class FranchiseUseCaseTest {
     void updateNameReturnsUpdatedFranchise() {
         Franchise updated = new Franchise(1L, "UpdatedName");
         when(franchisePersistencePort.findById(1L)).thenReturn(Mono.just(new Franchise(1L, "OldName")));
-        when(franchisePersistencePort.findByName("UpdatedName")).thenReturn(Mono.just(false));
+        when(franchisePersistencePort.existsByName("UpdatedName")).thenReturn(Mono.just(false));
         when(franchisePersistencePort.updateFranchise(updated)).thenReturn(Mono.just(updated));
 
         StepVerifier.create(franchiseUseCase.updateName(new Franchise(1L, "UpdatedName")))
@@ -133,7 +132,7 @@ class FranchiseUseCaseTest {
     @Test
     void updateNameFailsWhenNewNameAlreadyExists() {
         when(franchisePersistencePort.findById(1L)).thenReturn(Mono.just(new Franchise(1L, "OldName")));
-        when(franchisePersistencePort.findByName("Taken")).thenReturn(Mono.just(true));
+        when(franchisePersistencePort.existsByName("Taken")).thenReturn(Mono.just(true));
 
         StepVerifier.create(franchiseUseCase.updateName(new Franchise(1L, "Taken")))
                 .expectErrorMatches(businessError(TechnicalMessage.FRANCHISE_ALREADY_EXISTS))

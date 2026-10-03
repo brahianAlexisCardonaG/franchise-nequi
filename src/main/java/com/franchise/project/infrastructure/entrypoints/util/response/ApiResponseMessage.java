@@ -1,12 +1,12 @@
 package com.franchise.project.infrastructure.entrypoints.util.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Data;
 
-@Data
 @Builder
-public class ApiResponseMessage {
-    private String code;
-    private String message;
-    private String date;
+public record ApiResponseMessage(
+        @Schema(example = "200") String code,
+        @Schema(example = "Product deleted successfully") String message,
+        @Schema(example = "2026-01-01T12:00:00Z") String date
+) {
 }

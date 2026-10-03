@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.math.BigInteger;
 
 @Table("product")
 @Data
@@ -17,7 +16,7 @@ public class ProductEntity {
     @Id
     private Long id;
     private String name;
-    private BigInteger stock;
+    private Integer stock;
     @Column(value = "branch_id")
     private Long branchId;
 }

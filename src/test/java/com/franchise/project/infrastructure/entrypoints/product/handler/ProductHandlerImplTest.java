@@ -9,7 +9,8 @@ import com.franchise.project.domain.product.model.ProductBranch;
 import com.franchise.project.infrastructure.entrypoints.product.RouterRestProduct;
 import com.franchise.project.infrastructure.entrypoints.product.mapper.ProductMapperImpl;
 import com.franchise.project.infrastructure.entrypoints.product.mapper.ProductMapperResponseImpl;
-import com.franchise.project.infrastructure.entrypoints.product.validations.ProductValidationDto;
+import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
+import jakarta.validation.Validation;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.error.BuildErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +23,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import java.math.BigInteger;
 
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductHandlerImplTest {
 
-    private static final BigInteger STOCK = BigInteger.TEN;
+    private static final Integer STOCK = 10;
 
     @Mock
     private ProductServicePort productServicePort;
@@ -39,7 +39,7 @@ class ProductHandlerImplTest {
 
     @BeforeEach
     void setUp() {
-        ProductHandlerImpl handler = new ProductHandlerImpl(new ProductValidationDto(), new ProductMapperImpl(),
+        ProductHandlerImpl handler = new ProductHandlerImpl(new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator()), new ProductMapperImpl(),
                 new ProductMapperResponseImpl(), productServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
         webTestClient = WebTestClient.bindToRouterFunction(new RouterRestProduct().routerFunctionProduct(handler)).build();
     }
@@ -72,7 +72,7 @@ class ProductHandlerImplTest {
 
     @Test
     void createProductWithNegativeStockReturnsBadRequest() {
-        when(productServicePort.createProduct(new Product(null, "Coffee", BigInteger.valueOf(-3), 5L)))
+        when(productServicePort.createProduct(new Product(null, "Coffee", -3, 5L)))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.PRODUCT_STOCK_INVALID)));
 
         webTestClient.post().uri("/api/v1/product")
@@ -106,7 +106,7 @@ class ProductHandlerImplTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.message").isEqualTo(TechnicalMessage.PRODUCT_BRANCH_DELETE.getMessage());
+                .jsonPath("$.message").isEqualTo(TechnicalMessage.PRODUCT_DELETED.getMessage());
     }
 
     @Test
@@ -129,8 +129,8 @@ class ProductHandlerImplTest {
 
     @Test
     void updateProductStockReturnsOk() {
-        when(productServicePort.updateStock(new Product(1L, null, BigInteger.valueOf(50), null)))
-                .thenReturn(Mono.just(new Product(1L, "Coffee", BigInteger.valueOf(50), 5L)));
+        when(productServicePort.updateStock(new Product(1L, null, 50, null)))
+                .thenReturn(Mono.just(new Product(1L, "Coffee", 50, 5L)));
 
         webTestClient.put().uri("/api/v1/product/stock")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -143,7 +143,7 @@ class ProductHandlerImplTest {
 
     @Test
     void updateStockOfUnknownProductReturnsNotFound() {
-        when(productServicePort.updateStock(new Product(99L, null, BigInteger.valueOf(50), null)))
+        when(productServicePort.updateStock(new Product(99L, null, 50, null)))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.PRODUCT_NOT_EXISTS)));
 
         webTestClient.put().uri("/api/v1/product/stock")

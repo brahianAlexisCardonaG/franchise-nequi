@@ -21,7 +21,7 @@ public class FranchisePersistenceAdapter implements FranchisePersistencePort {
     }
 
     @Override
-    public Mono<Boolean> findByName(String name) {
+    public Mono<Boolean> existsByName(String name) {
         return persistenceResilience.read(franchiseRepository.existsByName(name));
     }
 

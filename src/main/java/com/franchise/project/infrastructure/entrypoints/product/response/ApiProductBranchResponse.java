@@ -1,17 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.product.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.franchise.project.infrastructure.entrypoints.branch.response.BranchFranchiseResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Data;
 
-@Data
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiProductBranchResponse {
-    private String code;
-    private String message;
-    private String date;
-    private ProductBranchResponse data;
+public record ApiProductBranchResponse(
+        @Schema(example = "201") String code,
+        @Schema(example = "Product created successfully") String message,
+        @Schema(example = "2026-01-01T12:00:00Z") String date,
+        ProductBranchResponse data
+) {
 }

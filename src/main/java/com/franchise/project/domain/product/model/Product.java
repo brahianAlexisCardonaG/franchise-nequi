@@ -1,17 +1,17 @@
 package com.franchise.project.domain.product.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigInteger;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(toBuilder = true)
 public class Product {
     private Long id;
     private String name;
-    private BigInteger stock;
+    private Integer stock;
     private Long branchId;
 }

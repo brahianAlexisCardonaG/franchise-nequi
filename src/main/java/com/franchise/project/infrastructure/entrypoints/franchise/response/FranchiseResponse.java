@@ -1,13 +1,9 @@
 package com.franchise.project.infrastructure.entrypoints.franchise.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class FranchiseResponse {
-    private Long id;
-    private String Name;
+public record FranchiseResponse(
+        @Schema(example = "1") Long id,
+        @Schema(example = "Coffee House") String name
+) {
 }

@@ -1,13 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.product.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Data;
 
-@Data
 @Builder
-public class ApiProductResponse {
-    private String code;
-    private String message;
-    private String date;
-    private ProductResponse data;
+public record ApiProductResponse(
+        @Schema(example = "200") String code,
+        @Schema(example = "Product updated successfully") String message,
+        @Schema(example = "2026-01-01T12:00:00Z") String date,
+        ProductResponse data
+) {
 }

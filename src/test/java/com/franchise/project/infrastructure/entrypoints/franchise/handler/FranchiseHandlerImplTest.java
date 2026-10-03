@@ -10,7 +10,8 @@ import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.infrastructure.entrypoints.franchise.RouterRestFranchise;
 import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperImpl;
 import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperResponseImpl;
-import com.franchise.project.infrastructure.entrypoints.franchise.validations.FranchiseValidationDto;
+import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
+import jakarta.validation.Validation;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.error.BuildErrorResponse;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -24,7 +25,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -40,7 +40,7 @@ class FranchiseHandlerImplTest {
 
     @BeforeEach
     void setUp() {
-        FranchiseHandlerImpl handler = new FranchiseHandlerImpl(new FranchiseValidationDto(), new FranchiseMapperImpl(),
+        FranchiseHandlerImpl handler = new FranchiseHandlerImpl(new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator()), new FranchiseMapperImpl(),
                 new FranchiseMapperResponseImpl(), franchiseServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
         webTestClient = WebTestClient.bindToRouterFunction(new RouterRestFranchise().routerFunctionFranchise(handler)).build();
     }
@@ -72,6 +72,18 @@ class FranchiseHandlerImplTest {
     }
 
     @Test
+    void createFranchiseWithBlankNameReturnsBadRequest() {
+        webTestClient.post().uri("/api/v1/franchise")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"name\":\"   \"}")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.message").isEqualTo(TechnicalMessage.INVALID_PARAMETERS.getMessage());
+        verifyNoInteractions(franchiseServicePort);
+    }
+
+    @Test
     void createFranchiseWithDuplicatedNameReturnsConflict() {
         when(franchiseServicePort.createFranchise(new Franchise(null, "Franchise1")))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_ALREADY_EXISTS)));
@@ -85,7 +97,7 @@ class FranchiseHandlerImplTest {
 
     @Test
     void getTopStockProductsReturnsLargestStockProductPerBranch() {
-        Product coffee = new Product(100L, "Coffee", BigInteger.valueOf(20), 10L);
+        Product coffee = new Product(100L, "Coffee", 20, 10L);
         when(franchiseServicePort.getFranchiseBranchProduct(1L)).thenReturn(Mono.just(new FranchiseBranchProductList(
                 1L, "Franchise1", List.of(new BranchProduct(10L, "Downtown", coffee)))));
 

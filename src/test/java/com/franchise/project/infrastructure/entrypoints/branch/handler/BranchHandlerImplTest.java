@@ -9,7 +9,8 @@ import com.franchise.project.domain.franchise.model.Franchise;
 import com.franchise.project.infrastructure.entrypoints.branch.RouterRestBranch;
 import com.franchise.project.infrastructure.entrypoints.branch.mapper.BranchMapperImpl;
 import com.franchise.project.infrastructure.entrypoints.branch.mapper.BranchMapperResponseImpl;
-import com.franchise.project.infrastructure.entrypoints.branch.validations.BranchValidationDto;
+import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
+import jakarta.validation.Validation;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.error.BuildErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ class BranchHandlerImplTest {
 
     @BeforeEach
     void setUp() {
-        BranchHandlerImpl handler = new BranchHandlerImpl(new BranchValidationDto(), new BranchMapperImpl(),
+        BranchHandlerImpl handler = new BranchHandlerImpl(new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator()), new BranchMapperImpl(),
                 new BranchMapperResponseImpl(), branchServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
         webTestClient = WebTestClient.bindToRouterFunction(new RouterRestBranch().routerFunctionBranch(handler)).build();
     }
