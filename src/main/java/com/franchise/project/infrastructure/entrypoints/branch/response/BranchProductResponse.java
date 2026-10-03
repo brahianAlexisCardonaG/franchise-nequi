@@ -1,11 +1,12 @@
 package com.franchise.project.infrastructure.entrypoints.branch.response;
 
 import com.franchise.project.infrastructure.entrypoints.product.response.ProductResponse;
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@Data
-public class BranchProductResponse {
-    private Long id;
-    private String name;
-    private ProductResponse product;
+public record BranchProductResponse(
+        @Schema(example = "1") Long id,
+        @Schema(example = "Downtown") String name,
+        @Schema(description = "Largest stock product of the branch, null when the branch has no products")
+        ProductResponse product
+) {
 }

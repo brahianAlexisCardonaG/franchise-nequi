@@ -1,13 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.branch.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class BranchDtoUpdateName {
-    private Long id;
-    private String name;
+public record BranchDtoUpdateName(
+        @Schema(description = "Branch identifier", example = "1")
+        @NotNull Long id,
+        @Schema(description = "New branch name", example = "Uptown")
+        @NotBlank String name
+) {
 }

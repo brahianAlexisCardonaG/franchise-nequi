@@ -1,16 +1,15 @@
 package com.franchise.project.infrastructure.entrypoints.product.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-import java.math.BigInteger;
-
-@Data
-@AllArgsConstructor
-@RequiredArgsConstructor
-public class ProductDto {
-    private String name;
-    private BigInteger stock;
-    private Long branchId;
+public record ProductDto(
+        @Schema(description = "Product name, unique within its branch", example = "Espresso")
+        @NotBlank String name,
+        @Schema(description = "Available units, must be greater than or equal to zero", example = "25")
+        @NotNull Integer stock,
+        @Schema(description = "Identifier of the branch that sells the product", example = "1")
+        @NotNull Long branchId
+) {
 }

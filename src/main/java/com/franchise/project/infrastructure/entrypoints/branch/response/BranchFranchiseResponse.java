@@ -1,15 +1,11 @@
 package com.franchise.project.infrastructure.entrypoints.branch.response;
 
 import com.franchise.project.infrastructure.entrypoints.franchise.response.FranchiseResponse;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@Data
-@Getter
-@Setter
-public class BranchFranchiseResponse {
-    private Long id;
-    private String Name;
-    private FranchiseResponse franchise;
+public record BranchFranchiseResponse(
+        @Schema(example = "1") Long id,
+        @Schema(example = "Downtown") String name,
+        FranchiseResponse franchise
+) {
 }

@@ -1,12 +1,10 @@
 package com.franchise.project.infrastructure.entrypoints.product.response;
 
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.math.BigInteger;
-
-@Data
-public class ProductResponse {
-    private Long id;
-    private String name;
-    private BigInteger stock;
+public record ProductResponse(
+        @Schema(example = "1") Long id,
+        @Schema(example = "Espresso") String name,
+        @Schema(example = "25") Integer stock
+) {
 }

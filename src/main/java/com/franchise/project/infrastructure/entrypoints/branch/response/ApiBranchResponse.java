@@ -1,17 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.branch.response;
 
-import lombok.AllArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class ApiBranchResponse {
-    private String code;
-    private String message;
-    private String date;
-    private BranchResponse data;
+public record ApiBranchResponse(
+        @Schema(example = "200") String code,
+        @Schema(example = "Branch updated successfully") String message,
+        @Schema(example = "2026-01-01T12:00:00Z") String date,
+        BranchResponse data
+) {
 }

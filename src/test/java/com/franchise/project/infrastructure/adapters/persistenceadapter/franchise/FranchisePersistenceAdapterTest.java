@@ -51,10 +51,10 @@ class FranchisePersistenceAdapterTest {
     }
 
     @Test
-    void findByNameReturnsWhetherFranchiseExists() {
+    void existsByNameReturnsWhetherFranchiseExists() {
         when(franchiseRepository.existsByName("Franchise1")).thenReturn(Mono.just(false));
 
-        StepVerifier.create(adapter.findByName("Franchise1"))
+        StepVerifier.create(adapter.existsByName("Franchise1"))
                 .expectNext(false)
                 .verifyComplete();
     }

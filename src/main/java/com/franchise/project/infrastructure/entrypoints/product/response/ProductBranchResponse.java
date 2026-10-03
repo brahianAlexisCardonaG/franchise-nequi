@@ -1,16 +1,12 @@
 package com.franchise.project.infrastructure.entrypoints.product.response;
 
 import com.franchise.project.infrastructure.entrypoints.branch.response.BranchResponse;
-import lombok.Builder;
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.math.BigInteger;
-
-@Data
-@Builder
-public class ProductBranchResponse {
-    private Long id;
-    private String name;
-    private BigInteger stock;
-    private BranchResponse branch;
+public record ProductBranchResponse(
+        @Schema(example = "1") Long id,
+        @Schema(example = "Espresso") String name,
+        @Schema(example = "25") Integer stock,
+        BranchResponse branch
+) {
 }

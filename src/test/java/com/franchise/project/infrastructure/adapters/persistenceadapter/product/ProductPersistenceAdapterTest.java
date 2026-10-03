@@ -16,7 +16,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.math.BigInteger;
 import java.time.Duration;
 
 import static org.mockito.Mockito.verify;
@@ -25,8 +24,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductPersistenceAdapterTest {
 
-    private static final Product PRODUCT = new Product(1L, "Coffee", BigInteger.TEN, 100L);
-    private static final ProductEntity ENTITY = new ProductEntity(1L, "Coffee", BigInteger.TEN, 100L);
+    private static final Product PRODUCT = new Product(1L, "Coffee", 10, 100L);
+    private static final ProductEntity ENTITY = new ProductEntity(1L, "Coffee", 10, 100L);
 
     @Mock
     private ProductRepository productRepository;
