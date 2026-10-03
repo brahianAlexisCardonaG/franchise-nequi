@@ -36,5 +36,11 @@ out/
 ### VS Code ###
 .vscode/
 
-### terraform ###
-terraform/.terraform
+### secrets and local state ###
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+.env
+*.pem
