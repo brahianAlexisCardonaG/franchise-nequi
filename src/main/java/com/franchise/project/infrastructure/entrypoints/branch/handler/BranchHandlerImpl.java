@@ -1,6 +1,7 @@
 package com.franchise.project.infrastructure.entrypoints.branch.handler;
 
-import com.franchise.project.domain.branch.api.BranchServicePort;
+import com.franchise.project.domain.branch.api.CreateBranchServicePort;
+import com.franchise.project.domain.branch.api.UpdateBranchNameServicePort;
 import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.infrastructure.entrypoints.branch.dto.BranchDto;
 import com.franchise.project.infrastructure.entrypoints.branch.dto.BranchDtoUpdateName;
@@ -30,14 +31,15 @@ public class BranchHandlerImpl {
     private final RequestValidator requestValidator;
     private final BranchMapper branchMapper;
     private final BranchMapperResponse branchMapperResponse;
-    private final BranchServicePort branchServicePort;
+    private final CreateBranchServicePort createBranchServicePort;
+    private final UpdateBranchNameServicePort updateBranchNameServicePort;
     private final ApplyErrorHandler applyErrorHandler;
 
     public Mono<ServerResponse> createBranch(ServerRequest request) {
         Mono<ServerResponse> response = request.bodyToMono(BranchDto.class)
                 .flatMap(requestValidator::validate)
                 .map(branchMapper::toBranch)
-                .flatMap(branchServicePort::createBranch)
+                .flatMap(createBranchServicePort::createBranch)
                 .map(branchMapperResponse::toBranchFranchiseResponse)
                 .flatMap(branch -> ServerResponse.status(HttpStatus.CREATED)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -55,7 +57,7 @@ public class BranchHandlerImpl {
         Mono<ServerResponse> response = request.bodyToMono(BranchDtoUpdateName.class)
                 .flatMap(requestValidator::validate)
                 .map(branchMapper::toBranchUpdateName)
-                .flatMap(branchServicePort::updateName)
+                .flatMap(updateBranchNameServicePort::updateBranchName)
                 .map(branchMapperResponse::toBranchResponse)
                 .flatMap(branch -> ServerResponse.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
