@@ -4,12 +4,12 @@ spring:
   application:
     name: franchise
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/franchise?sslmode=require
-    username: postgres
-    password: Maddy-2026
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/franchise}
+    username: ${SPRING_R2DBC_USERNAME:franchise}
+    password: ${SPRING_R2DBC_PASSWORD:change-me}
   sql:
     init:
-      mode: never
+      mode: ${SPRING_SQL_INIT_MODE:never}
 logging:
   level:
     org.springframework.web.reactive.function.server: INFO
