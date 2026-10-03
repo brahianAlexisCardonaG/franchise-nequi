@@ -61,15 +61,12 @@ public class BranchPersistenceAdapterTest {
     }
 
     @Test
-    void shouldReturnTrueWhenBranchExistsByName() {
+    void shouldReturnTrueWhenBranchExistsByNameInFranchise() {
         String branchName = "Sucursal Central";
-        Branch branch = getSampleBranch();
-        BranchEntity entity = getSampleEntity();
 
-        when(branchRepository.findByName(branchName)).thenReturn(Mono.just(entity));
-        when(branchEntityMapper.toModel(entity)).thenReturn(branch);
+        when(branchRepository.existsByNameAndFranchiseId(branchName, 100L)).thenReturn(Mono.just(true));
 
-        Mono<Boolean> result = adapter.existByName(branchName);
+        Mono<Boolean> result = adapter.existsByNameAndFranchiseId(branchName, 100L);
 
         StepVerifier.create(result)
                 .expectNext(true)
@@ -77,12 +74,12 @@ public class BranchPersistenceAdapterTest {
     }
 
     @Test
-    void shouldReturnFalseWhenBranchDoesNotExistByName() {
+    void shouldReturnFalseWhenBranchDoesNotExistByNameInFranchise() {
         String branchName = "NonExistent";
 
-        when(branchRepository.findByName(branchName)).thenReturn(Mono.empty());
+        when(branchRepository.existsByNameAndFranchiseId(branchName, 100L)).thenReturn(Mono.just(false));
 
-        Mono<Boolean> result = adapter.existByName(branchName);
+        Mono<Boolean> result = adapter.existsByNameAndFranchiseId(branchName, 100L);
 
         StepVerifier.create(result)
                 .expectNext(false)

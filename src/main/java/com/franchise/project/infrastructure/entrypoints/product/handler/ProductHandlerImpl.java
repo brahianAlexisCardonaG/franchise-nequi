@@ -26,6 +26,7 @@ import reactor.util.context.Context;
 import java.time.Instant;
 
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.FRANCHISE_ERROR;
+import static com.franchise.project.infrastructure.entrypoints.util.Constants.PRODUCT_ID_PATH_VARIABLE;
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.X_MESSAGE_ID;
 
 @Component
@@ -60,13 +61,10 @@ public class ProductHandlerImpl {
     }
 
     public Mono<ServerResponse> deleteProductBranch(ServerRequest request) {
-        Long productId = request
-                .queryParam("productId")
-                .map(Long::parseLong)
-                .orElseThrow(() -> new BusinessException(TechnicalMessage.PRODUCT_ID_REQUIRED));
-
-        Mono<ServerResponse> response = productServicePort.deleteProductBranch(productId)
-                .then(ServerResponse.status(HttpStatus.CREATED)
+        Mono<ServerResponse> response = Mono.fromCallable(() -> Long.parseLong(request.pathVariable(PRODUCT_ID_PATH_VARIABLE)))
+                .onErrorMap(NumberFormatException.class, ex -> new BusinessException(TechnicalMessage.INVALID_PARAMETERS))
+                .flatMap(productServicePort::deleteProductBranch)
+                .then(ServerResponse.status(HttpStatus.OK)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(ApiResponseMessage.builder()
                                         .code(TechnicalMessage.PRODUCT_BRANCH_DELETE.getCode())
@@ -86,7 +84,7 @@ public class ProductHandlerImpl {
                 .flatMap(productServicePort::updateStock)
                 .map(productMapperResponse::toProductResponse)
                 .flatMap( productResp ->
-                        ServerResponse.status(HttpStatus.CREATED)
+                        ServerResponse.status(HttpStatus.OK)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(ApiProductResponse.builder()
                                         .code(TechnicalMessage.PRODUCT_UPDATE.getCode())

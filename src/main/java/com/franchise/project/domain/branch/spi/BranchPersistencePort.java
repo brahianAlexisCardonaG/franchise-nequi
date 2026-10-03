@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface BranchPersistencePort {
     Mono<Branch> createBranch(Branch branch);
-    Mono<Boolean> existByName(String name);
+    Mono<Boolean> existsByNameAndFranchiseId(String name, Long franchiseId);
     Mono<Branch> findById(Long id);
     Mono<List<Branch>> findBranchesByFranchiseId(Long franchiseId);
     Mono<Branch> updateBranch(Branch branch);
