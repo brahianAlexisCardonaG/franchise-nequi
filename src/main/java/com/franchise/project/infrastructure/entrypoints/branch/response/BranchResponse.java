@@ -1,13 +1,9 @@
 package com.franchise.project.infrastructure.entrypoints.branch.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class BranchResponse {
-    private Long id;
-    private String name;
+public record BranchResponse(
+        @Schema(example = "1") Long id,
+        @Schema(example = "Downtown") String name
+) {
 }

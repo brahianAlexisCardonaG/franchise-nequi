@@ -1,19 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.franchise.response;
 
 import com.franchise.project.infrastructure.entrypoints.branch.response.BranchProductResponse;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class FranchiseBranchProductListResponse {
-    private Long id;
-    private String name;
-    private List<BranchProductResponse> branches;
+public record FranchiseBranchProductListResponse(
+        @Schema(example = "1") Long id,
+        @Schema(example = "Coffee House") String name,
+        List<BranchProductResponse> branches
+) {
 }

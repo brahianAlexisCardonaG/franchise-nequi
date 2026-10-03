@@ -9,30 +9,28 @@ import com.franchise.project.infrastructure.entrypoints.franchise.mapper.Franchi
 import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseBranchProductResponse;
 import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFranchiseResponse;
-import com.franchise.project.infrastructure.entrypoints.franchise.validations.FranchiseValidationDto;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
+import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
-import reactor.util.context.Context;
 
 import java.time.Instant;
 
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.FRANCHISE_ERROR;
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.FRANCHISE_ID_PATH_VARIABLE;
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.X_MESSAGE_ID;
+import static com.franchise.project.infrastructure.entrypoints.util.Constants.REQUEST_FAILED_LOG;
 
 @Component
 @RequiredArgsConstructor
-@Log4j2
+@Slf4j
 public class FranchiseHandlerImpl {
 
-    private final FranchiseValidationDto franchiseValidationDto;
+    private final RequestValidator requestValidator;
     private final FranchiseMapper franchiseMapper;
     private final FranchiseMapperResponse franchiseMapperResponse;
     private final FranchiseServicePort franchiseServicePort;
@@ -40,22 +38,19 @@ public class FranchiseHandlerImpl {
 
     public Mono<ServerResponse> createFranchise(ServerRequest request) {
         Mono<ServerResponse> response = request.bodyToMono(FranchiseDto.class)
-                .flatMap(franchiseValidationDto::validateFieldNotNullOrBlank)
+                .flatMap(requestValidator::validate)
                 .map(franchiseMapper::toFranchise)
                 .flatMap(franchiseServicePort::createFranchise)
                 .map(franchiseMapperResponse::toFranchiseResponse)
-                .flatMap( franchise ->
-                            ServerResponse.status(HttpStatus.CREATED)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .bodyValue(ApiFranchiseResponse.builder()
-                                            .code(TechnicalMessage.FRANCHISE_CREATED.getCode())
-                                            .message(TechnicalMessage.FRANCHISE_CREATED.getMessage())
-                                            .date(Instant.now().toString())
-                                            .data(franchise)
-                                            .build())
-                )
-                .contextWrite(Context.of(X_MESSAGE_ID, ""))
-                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+                .flatMap(franchise -> ServerResponse.status(HttpStatus.CREATED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiFranchiseResponse.builder()
+                                .code(TechnicalMessage.FRANCHISE_CREATED.getCode())
+                                .message(TechnicalMessage.FRANCHISE_CREATED.getMessage())
+                                .date(Instant.now().toString())
+                                .data(franchise)
+                                .build()))
+                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -64,40 +59,33 @@ public class FranchiseHandlerImpl {
                 .onErrorMap(NumberFormatException.class, ex -> new BusinessException(TechnicalMessage.INVALID_PARAMETERS))
                 .flatMap(franchiseServicePort::getFranchiseBranchProduct)
                 .map(franchiseMapperResponse::toFranchiseBranchProductListResponse)
-                .flatMap(franchise ->
-                ServerResponse.status(HttpStatus.OK)
+                .flatMap(franchise -> ServerResponse.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(ApiFranchiseBranchProductResponse.builder()
                                 .code(TechnicalMessage.FRANCHISE_BRANCH_PRODUCT_FOUND.getCode())
                                 .message(TechnicalMessage.FRANCHISE_BRANCH_PRODUCT_FOUND.getMessage())
                                 .date(Instant.now().toString())
                                 .data(franchise)
-                                .build())
-                )
-                .contextWrite(Context.of(X_MESSAGE_ID, ""))
-                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+                                .build()))
+                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
         return applyErrorHandler.applyErrorHandling(response);
-
     }
 
     public Mono<ServerResponse> updateFranchiseName(ServerRequest request) {
         Mono<ServerResponse> response = request.bodyToMono(FranchiseDtoUpdateName.class)
-                .flatMap(franchiseValidationDto::validateFranchiseDtoNameNotNullOrBlank)
+                .flatMap(requestValidator::validate)
                 .map(franchiseMapper::toFranchiseUpdateName)
                 .flatMap(franchiseServicePort::updateName)
                 .map(franchiseMapperResponse::toFranchiseResponse)
-                .flatMap( franchiseResp ->
-                        ServerResponse.status(HttpStatus.OK)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ApiFranchiseResponse.builder()
-                                        .code(TechnicalMessage.FRANCHISE_UPDATE.getCode())
-                                        .message(TechnicalMessage.FRANCHISE_UPDATE.getMessage())
-                                        .date(Instant.now().toString())
-                                        .data(franchiseResp)
-                                        .build())
-                )
-                .contextWrite(Context.of(X_MESSAGE_ID, ""))
-                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+                .flatMap(franchise -> ServerResponse.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiFranchiseResponse.builder()
+                                .code(TechnicalMessage.FRANCHISE_UPDATE.getCode())
+                                .message(TechnicalMessage.FRANCHISE_UPDATE.getMessage())
+                                .date(Instant.now().toString())
+                                .data(franchise)
+                                .build()))
+                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
         return applyErrorHandler.applyErrorHandling(response);
     }
 }

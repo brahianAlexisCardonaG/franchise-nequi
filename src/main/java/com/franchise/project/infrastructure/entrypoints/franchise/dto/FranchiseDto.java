@@ -1,12 +1,10 @@
 package com.franchise.project.infrastructure.entrypoints.franchise.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class FranchiseDto {
-    private String name;
+public record FranchiseDto(
+        @Schema(description = "Franchise name, unique in the system", example = "Coffee House")
+        @NotBlank String name
+) {
 }

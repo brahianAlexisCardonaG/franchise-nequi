@@ -1,20 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.franchise.response;
 
-import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDto;
-import lombok.AllArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.List;
-
-@Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class ApiFranchiseResponse {
-    private String code;
-    private String message;
-    private String date;
-    private FranchiseResponse data;
+public record ApiFranchiseResponse(
+        @Schema(example = "201") String code,
+        @Schema(example = "Franchise created successfully") String message,
+        @Schema(example = "2026-01-01T12:00:00Z") String date,
+        FranchiseResponse data
+) {
 }

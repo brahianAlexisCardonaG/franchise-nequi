@@ -1,11 +1,12 @@
 package com.franchise.project.infrastructure.entrypoints.product.dto;
 
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 
-import java.math.BigInteger;
-
-@Data
-public class ProductDtoUpdateStock {
-    private Long Id;
-    private BigInteger stock;
+public record ProductDtoUpdateStock(
+        @Schema(description = "Product identifier", example = "1")
+        @NotNull Long id,
+        @Schema(description = "New available units, must be greater than or equal to zero", example = "40")
+        @NotNull Integer stock
+) {
 }

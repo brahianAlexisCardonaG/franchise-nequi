@@ -6,34 +6,32 @@ import com.franchise.project.domain.product.api.ProductServicePort;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDto;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateName;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateStock;
-import com.franchise.project.infrastructure.entrypoints.product.mapper.ProductMapperResponse;
 import com.franchise.project.infrastructure.entrypoints.product.mapper.ProductMapper;
+import com.franchise.project.infrastructure.entrypoints.product.mapper.ProductMapperResponse;
 import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductBranchResponse;
 import com.franchise.project.infrastructure.entrypoints.product.response.ApiProductResponse;
-import com.franchise.project.infrastructure.entrypoints.product.validations.ProductValidationDto;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.response.ApiResponseMessage;
+import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
-import reactor.util.context.Context;
 
 import java.time.Instant;
 
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.FRANCHISE_ERROR;
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.PRODUCT_ID_PATH_VARIABLE;
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.X_MESSAGE_ID;
+import static com.franchise.project.infrastructure.entrypoints.util.Constants.REQUEST_FAILED_LOG;
 
 @Component
 @RequiredArgsConstructor
-@Log4j2
+@Slf4j
 public class ProductHandlerImpl {
-    private final ProductValidationDto productValidationDto;
+    private final RequestValidator requestValidator;
     private final ProductMapper productMapper;
     private final ProductMapperResponse productMapperResponse;
     private final ProductServicePort productServicePort;
@@ -41,22 +39,19 @@ public class ProductHandlerImpl {
 
     public Mono<ServerResponse> createProduct(ServerRequest request) {
         Mono<ServerResponse> response = request.bodyToMono(ProductDto.class)
-                .flatMap(productValidationDto::validateDtoCreateNotNullOrBlank)
+                .flatMap(requestValidator::validate)
                 .map(productMapper::toProductCreate)
                 .flatMap(productServicePort::createProduct)
                 .map(productMapperResponse::toProductBranchResponse)
-                .flatMap( productResp ->
-                        ServerResponse.status(HttpStatus.CREATED)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ApiProductBranchResponse.builder()
-                                        .code(TechnicalMessage.PRODUCT_CREATED.getCode())
-                                        .message(TechnicalMessage.PRODUCT_CREATED.getMessage())
-                                        .date(Instant.now().toString())
-                                        .data(productResp)
-                                        .build())
-                )
-                .contextWrite(Context.of(X_MESSAGE_ID, ""))
-                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+                .flatMap(product -> ServerResponse.status(HttpStatus.CREATED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiProductBranchResponse.builder()
+                                .code(TechnicalMessage.PRODUCT_CREATED.getCode())
+                                .message(TechnicalMessage.PRODUCT_CREATED.getMessage())
+                                .date(Instant.now().toString())
+                                .data(product)
+                                .build()))
+                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -64,58 +59,50 @@ public class ProductHandlerImpl {
         Mono<ServerResponse> response = Mono.fromCallable(() -> Long.parseLong(request.pathVariable(PRODUCT_ID_PATH_VARIABLE)))
                 .onErrorMap(NumberFormatException.class, ex -> new BusinessException(TechnicalMessage.INVALID_PARAMETERS))
                 .flatMap(productServicePort::deleteProductBranch)
-                .then(ServerResponse.status(HttpStatus.OK)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ApiResponseMessage.builder()
-                                        .code(TechnicalMessage.PRODUCT_BRANCH_DELETE.getCode())
-                                        .message(TechnicalMessage.PRODUCT_BRANCH_DELETE.getMessage())
-                                        .date(Instant.now().toString())
-                                        .build())
-                )
-                .contextWrite(Context.of(X_MESSAGE_ID, ""))
-                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+                .then(Mono.defer(() -> ServerResponse.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiResponseMessage.builder()
+                                .code(TechnicalMessage.PRODUCT_DELETED.getCode())
+                                .message(TechnicalMessage.PRODUCT_DELETED.getMessage())
+                                .date(Instant.now().toString())
+                                .build())))
+                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
     public Mono<ServerResponse> updateProductStock(ServerRequest request) {
         Mono<ServerResponse> response = request.bodyToMono(ProductDtoUpdateStock.class)
-                .flatMap(productValidationDto::validateDtoUpdateStockNotNullOrBlank)
+                .flatMap(requestValidator::validate)
                 .map(productMapper::toProductUpdateStock)
                 .flatMap(productServicePort::updateStock)
                 .map(productMapperResponse::toProductResponse)
-                .flatMap( productResp ->
-                        ServerResponse.status(HttpStatus.OK)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ApiProductResponse.builder()
-                                        .code(TechnicalMessage.PRODUCT_UPDATE.getCode())
-                                        .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
-                                        .date(Instant.now().toString())
-                                        .data(productResp)
-                                        .build())
-                )
-                .contextWrite(Context.of(X_MESSAGE_ID, ""))
-                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+                .flatMap(product -> ServerResponse.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiProductResponse.builder()
+                                .code(TechnicalMessage.PRODUCT_UPDATE.getCode())
+                                .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
+                                .date(Instant.now().toString())
+                                .data(product)
+                                .build()))
+                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
     public Mono<ServerResponse> updateProductName(ServerRequest request) {
         Mono<ServerResponse> response = request.bodyToMono(ProductDtoUpdateName.class)
-                .flatMap(productValidationDto::validateDtoUpdateNameNotNullOrBlank)
+                .flatMap(requestValidator::validate)
                 .map(productMapper::toProductUpdateName)
                 .flatMap(productServicePort::updateName)
                 .map(productMapperResponse::toProductResponse)
-                .flatMap( productResp ->
-                        ServerResponse.status(HttpStatus.OK)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ApiProductResponse.builder()
-                                        .code(TechnicalMessage.PRODUCT_UPDATE.getCode())
-                                        .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
-                                        .date(Instant.now().toString())
-                                        .data(productResp)
-                                        .build())
-                )
-                .contextWrite(Context.of(X_MESSAGE_ID, ""))
-                .doOnError(ex -> log.error(FRANCHISE_ERROR, ex));
+                .flatMap(product -> ServerResponse.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ApiProductResponse.builder()
+                                .code(TechnicalMessage.PRODUCT_UPDATE.getCode())
+                                .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
+                                .date(Instant.now().toString())
+                                .data(product)
+                                .build()))
+                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
         return applyErrorHandler.applyErrorHandling(response);
     }
 }

@@ -11,7 +11,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -28,30 +27,22 @@ public class ApplyErrorHandler {
             TechnicalMessage.PRODUCT_ALREADY_EXISTS, HttpStatus.CONFLICT
     );
 
-    private final BuildErrorResponse buildErrorRes;
+    private final BuildErrorResponse buildErrorResponse;
 
     public Mono<ServerResponse> applyErrorHandling(Mono<ServerResponse> mono) {
         return mono
-                .onErrorResume(BusinessException.class, ex -> buildErrorResponse(
+                .onErrorResume(BusinessException.class, ex -> buildErrorResponse.buildErrorResponse(
                         STATUS_BY_MESSAGE.getOrDefault(ex.getTechnicalMessage(), HttpStatus.BAD_REQUEST),
                         ex.getTechnicalMessage()))
-                .onErrorResume(ServerWebInputException.class, ex -> buildErrorResponse(
+                .onErrorResume(ServerWebInputException.class, ex -> buildErrorResponse.buildErrorResponse(
                         HttpStatus.BAD_REQUEST, TechnicalMessage.INVALID_REQUEST))
-                .onErrorResume(DuplicateKeyException.class, ex -> buildErrorResponse(
+                .onErrorResume(DuplicateKeyException.class, ex -> buildErrorResponse.buildErrorResponse(
                         HttpStatus.CONFLICT, TechnicalMessage.RESOURCE_ALREADY_EXISTS))
-                .onErrorResume(CallNotPermittedException.class, ex -> buildErrorResponse(
+                .onErrorResume(CallNotPermittedException.class, ex -> buildErrorResponse.buildErrorResponse(
                         HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE))
-                .onErrorResume(TimeoutException.class, ex -> buildErrorResponse(
+                .onErrorResume(TimeoutException.class, ex -> buildErrorResponse.buildErrorResponse(
                         HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE))
-                .onErrorResume(ex -> buildErrorResponse(
+                .onErrorResume(ex -> buildErrorResponse.buildErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR, TechnicalMessage.INTERNAL_ERROR));
-    }
-
-    private Mono<ServerResponse> buildErrorResponse(HttpStatus status, TechnicalMessage technicalMessage) {
-        return buildErrorRes.buildErrorResponse(status, technicalMessage, List.of(ErrorDto.builder()
-                .code(technicalMessage.getCode())
-                .message(technicalMessage.getMessage())
-                .param(technicalMessage.getParam())
-                .build()));
     }
 }
