@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-franchise}
+      POSTGRES_USER: ${POSTGRES_USER:-franchise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the .env file}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    image: franchise-api:local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/${POSTGRES_DB:-franchise}
+      SPRING_R2DBC_USERNAME: ${POSTGRES_USER:-franchise}
+      SPRING_R2DBC_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the .env file}
+      SPRING_SQL_INIT_MODE: always
+    ports:
+      - "8085:8085"
+
+volumes:
+  postgres-data:
