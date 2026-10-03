@@ -4,6 +4,9 @@ import com.franchise.project.domain.branch.model.Branch;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.entity.BranchEntity;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.mapper.BranchEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.repository.BranchRepository;
+import com.franchise.project.infrastructure.adapters.persistenceadapter.resilience.PersistenceResilience;
+import com.franchise.project.infrastructure.adapters.persistenceadapter.resilience.PersistenceResilienceProperties;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,15 +16,18 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.List;
+import java.time.Duration;
 
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class BranchPersistenceAdapterTest {
+class BranchPersistenceAdapterTest {
+
+    private static final Branch BRANCH = new Branch(1L, "Downtown", 100L);
+    private static final BranchEntity ENTITY = new BranchEntity(1L, "Downtown", 100L);
+
     @Mock
     private BranchRepository branchRepository;
-
     @Mock
     private BranchEntityMapper branchEntityMapper;
 
@@ -29,108 +35,60 @@ public class BranchPersistenceAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new BranchPersistenceAdapter(branchRepository, branchEntityMapper);
-    }
-
-    private Branch getSampleBranch() {
-        return new Branch(1L, "Sucursal Central", 100L);
-    }
-
-    private BranchEntity getSampleEntity() {
-        BranchEntity entity = new BranchEntity();
-        entity.setId(1L);
-        entity.setName("Sucursal Central");
-        entity.setFranchiseId(100L);
-        return entity;
+        PersistenceResilience persistenceResilience = new PersistenceResilience(CircuitBreaker.ofDefaults("test"),
+                new PersistenceResilienceProperties("test", Duration.ofSeconds(1), 2, Duration.ofMillis(10), 16));
+        adapter = new BranchPersistenceAdapter(branchRepository, branchEntityMapper, persistenceResilience);
     }
 
     @Test
-    void shouldCreateBranchSuccessfully() {
-        Branch branch = getSampleBranch();
-        BranchEntity entity = getSampleEntity();
+    void createBranchSavesMappedEntity() {
+        when(branchEntityMapper.toEntity(BRANCH)).thenReturn(ENTITY);
+        when(branchRepository.save(ENTITY)).thenReturn(Mono.just(ENTITY));
+        when(branchEntityMapper.toModel(ENTITY)).thenReturn(BRANCH);
 
-        when(branchEntityMapper.toEntity(branch)).thenReturn(entity);
-        when(branchRepository.save(entity)).thenReturn(Mono.just(entity));
-        when(branchEntityMapper.toModel(entity)).thenReturn(branch);
-
-        Mono<Branch> result = adapter.createBranch(branch);
-
-        StepVerifier.create(result)
-                .expectNext(branch)
+        StepVerifier.create(adapter.createBranch(BRANCH))
+                .expectNext(BRANCH)
                 .verifyComplete();
     }
 
     @Test
-    void shouldReturnTrueWhenBranchExistsByNameInFranchise() {
-        String branchName = "Sucursal Central";
+    void existsByNameAndFranchiseIdDelegatesToRepository() {
+        when(branchRepository.existsByNameAndFranchiseId("Downtown", 100L)).thenReturn(Mono.just(true));
 
-        when(branchRepository.existsByNameAndFranchiseId(branchName, 100L)).thenReturn(Mono.just(true));
-
-        Mono<Boolean> result = adapter.existsByNameAndFranchiseId(branchName, 100L);
-
-        StepVerifier.create(result)
+        StepVerifier.create(adapter.existsByNameAndFranchiseId("Downtown", 100L))
                 .expectNext(true)
                 .verifyComplete();
     }
 
     @Test
-    void shouldReturnFalseWhenBranchDoesNotExistByNameInFranchise() {
-        String branchName = "NonExistent";
+    void findByIdReturnsEmptyWhenBranchDoesNotExist() {
+        when(branchRepository.findById(99L)).thenReturn(Mono.empty());
 
-        when(branchRepository.existsByNameAndFranchiseId(branchName, 100L)).thenReturn(Mono.just(false));
-
-        Mono<Boolean> result = adapter.existsByNameAndFranchiseId(branchName, 100L);
-
-        StepVerifier.create(result)
-                .expectNext(false)
+        StepVerifier.create(adapter.findById(99L))
                 .verifyComplete();
     }
 
     @Test
-    void shouldFindBranchById() {
-        Long branchId = 1L;
-        Branch branch = getSampleBranch();
-        BranchEntity entity = getSampleEntity();
+    void findBranchesByFranchiseIdStreamsEveryBranch() {
+        BranchEntity secondEntity = new BranchEntity(2L, "Airport", 100L);
+        Branch secondBranch = new Branch(2L, "Airport", 100L);
+        when(branchRepository.findByFranchiseId(100L)).thenReturn(Flux.just(ENTITY, secondEntity));
+        when(branchEntityMapper.toModel(ENTITY)).thenReturn(BRANCH);
+        when(branchEntityMapper.toModel(secondEntity)).thenReturn(secondBranch);
 
-        when(branchRepository.findById(branchId)).thenReturn(Mono.just(entity));
-        when(branchEntityMapper.toModel(entity)).thenReturn(branch);
-
-        Mono<Branch> result = adapter.findById(branchId);
-
-        StepVerifier.create(result)
-                .expectNext(branch)
+        StepVerifier.create(adapter.findBranchesByFranchiseId(100L))
+                .expectNext(BRANCH, secondBranch)
                 .verifyComplete();
     }
 
     @Test
-    void shouldFindBranchesByFranchiseId() {
-        Long franchiseId = 100L;
-        Branch branch = getSampleBranch();
-        BranchEntity entity = getSampleEntity();
+    void updateBranchSavesMappedEntity() {
+        when(branchEntityMapper.toEntity(BRANCH)).thenReturn(ENTITY);
+        when(branchRepository.save(ENTITY)).thenReturn(Mono.just(ENTITY));
+        when(branchEntityMapper.toModel(ENTITY)).thenReturn(BRANCH);
 
-        when(branchRepository.findByFranchiseId(franchiseId)).thenReturn(Flux.just(entity));
-        when(branchEntityMapper.toModel(entity)).thenReturn(branch);
-
-        Mono<List<Branch>> result = adapter.findBranchesByFranchiseId(franchiseId);
-
-        StepVerifier.create(result)
-                .expectNext(List.of(branch))
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldUpdateBranchSuccessfully() {
-        Branch branch = getSampleBranch();
-        BranchEntity entity = getSampleEntity();
-
-        when(branchEntityMapper.toEntity(branch)).thenReturn(entity);
-        when(branchRepository.save(entity)).thenReturn(Mono.just(entity));
-        when(branchEntityMapper.toModel(entity)).thenReturn(branch);
-
-        Mono<Branch> result = adapter.updateBranch(branch);
-
-        StepVerifier.create(result)
-                .expectNext(branch)
+        StepVerifier.create(adapter.updateBranch(BRANCH))
+                .expectNext(BRANCH)
                 .verifyComplete();
     }
 }

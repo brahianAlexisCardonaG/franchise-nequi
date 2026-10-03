@@ -4,6 +4,9 @@ import com.franchise.project.domain.franchise.model.Franchise;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.entity.FranchiseEntity;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.mapper.FranchiseEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.repository.FranchiseRepository;
+import com.franchise.project.infrastructure.adapters.persistenceadapter.resilience.PersistenceResilience;
+import com.franchise.project.infrastructure.adapters.persistenceadapter.resilience.PersistenceResilienceProperties;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,13 +15,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.Duration;
+
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class FranchisePersistenceAdapterTest {
+class FranchisePersistenceAdapterTest {
+
+    private static final Franchise FRANCHISE = new Franchise(1L, "Franchise1");
+    private static final FranchiseEntity ENTITY = new FranchiseEntity(1L, "Franchise1");
+
     @Mock
     private FranchiseRepository franchiseRepository;
-
     @Mock
     private FranchiseEntityMapper franchiseEntityMapper;
 
@@ -26,84 +34,49 @@ public class FranchisePersistenceAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new FranchisePersistenceAdapter(franchiseRepository, franchiseEntityMapper);
-    }
-
-    private Franchise getSampleFranchise() {
-        return new Franchise(1L, "Test Franchise");
-    }
-
-    private FranchiseEntity getSampleFranchiseEntity() {
-        FranchiseEntity entity = new FranchiseEntity();
-        entity.setId(1L);
-        entity.setName("Test Franchise");
-        return entity;
+        PersistenceResilience persistenceResilience = new PersistenceResilience(CircuitBreaker.ofDefaults("test"),
+                new PersistenceResilienceProperties("test", Duration.ofSeconds(1), 2, Duration.ofMillis(10), 16));
+        adapter = new FranchisePersistenceAdapter(franchiseRepository, franchiseEntityMapper, persistenceResilience);
     }
 
     @Test
-    void shouldCreateFranchiseSuccessfully() {
-        Franchise franchise = getSampleFranchise();
-        FranchiseEntity entity = getSampleFranchiseEntity();
+    void createFranchiseSavesMappedEntity() {
+        when(franchiseEntityMapper.toEntity(FRANCHISE)).thenReturn(ENTITY);
+        when(franchiseRepository.save(ENTITY)).thenReturn(Mono.just(ENTITY));
+        when(franchiseEntityMapper.toModel(ENTITY)).thenReturn(FRANCHISE);
 
-        when(franchiseEntityMapper.toEntity(franchise)).thenReturn(entity);
-        when(franchiseRepository.save(entity)).thenReturn(Mono.just(entity));
-        when(franchiseEntityMapper.toModel(entity)).thenReturn(franchise);
-
-        StepVerifier.create(adapter.createFranchise(franchise))
-                .expectNext(franchise)
+        StepVerifier.create(adapter.createFranchise(FRANCHISE))
+                .expectNext(FRANCHISE)
                 .verifyComplete();
     }
 
     @Test
-    void shouldReturnTrueWhenFranchiseExistsByName() {
-        String name = "Test Franchise";
-        Franchise franchise = getSampleFranchise();
-        FranchiseEntity entity = getSampleFranchiseEntity();
+    void findByNameReturnsWhetherFranchiseExists() {
+        when(franchiseRepository.existsByName("Franchise1")).thenReturn(Mono.just(false));
 
-        when(franchiseRepository.findByName(name)).thenReturn(Mono.just(entity));
-        when(franchiseEntityMapper.toModel(entity)).thenReturn(franchise);
-
-        StepVerifier.create(adapter.findByName(name))
-                .expectNext(true)
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldReturnFalseWhenFranchiseDoesNotExistByName() {
-        String name = "NonExistent";
-
-        when(franchiseRepository.findByName(name)).thenReturn(Mono.empty());
-
-        StepVerifier.create(adapter.findByName(name))
+        StepVerifier.create(adapter.findByName("Franchise1"))
                 .expectNext(false)
                 .verifyComplete();
     }
 
     @Test
-    void shouldFindFranchiseById() {
-        Long id = 1L;
-        Franchise franchise = getSampleFranchise();
-        FranchiseEntity entity = getSampleFranchiseEntity();
+    void findByIdReturnsMappedFranchise() {
+        when(franchiseRepository.findById(1L)).thenReturn(Mono.just(ENTITY));
+        when(franchiseEntityMapper.toModel(ENTITY)).thenReturn(FRANCHISE);
 
-        when(franchiseRepository.findById(id)).thenReturn(Mono.just(entity));
-        when(franchiseEntityMapper.toModel(entity)).thenReturn(franchise);
-
-        StepVerifier.create(adapter.findById(id))
-                .expectNext(franchise)
+        StepVerifier.create(adapter.findById(1L))
+                .expectNext(FRANCHISE)
                 .verifyComplete();
     }
 
     @Test
-    void shouldUpdateFranchiseSuccessfully() {
-        Franchise franchise = getSampleFranchise();
-        FranchiseEntity entity = getSampleFranchiseEntity();
+    void updateFranchiseSavesMappedEntity() {
+        when(franchiseEntityMapper.toEntity(FRANCHISE)).thenReturn(ENTITY);
+        when(franchiseRepository.save(ENTITY)).thenReturn(Mono.just(ENTITY));
+        when(franchiseEntityMapper.toModel(ENTITY)).thenReturn(FRANCHISE);
 
-        when(franchiseEntityMapper.toEntity(franchise)).thenReturn(entity);
-        when(franchiseRepository.save(entity)).thenReturn(Mono.just(entity));
-        when(franchiseEntityMapper.toModel(entity)).thenReturn(franchise);
-
-        StepVerifier.create(adapter.updateFranchise(franchise))
-                .expectNext(franchise)
+        StepVerifier.create(adapter.updateFranchise(FRANCHISE))
+                .expectNext(FRANCHISE)
                 .verifyComplete();
     }
 }

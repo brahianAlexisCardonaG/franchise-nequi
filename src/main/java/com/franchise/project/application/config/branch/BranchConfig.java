@@ -8,6 +8,7 @@ import com.franchise.project.domain.util.ValidationCondition;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.BranchPersistenceAdapter;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.mapper.BranchEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.branch.repository.BranchRepository;
+import com.franchise.project.infrastructure.adapters.persistenceadapter.resilience.PersistenceResilience;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +21,8 @@ public class BranchConfig {
 
 
     @Bean
-    public BranchPersistencePort branchPersistencePort() {
-        return new BranchPersistenceAdapter(branchRepository, branchEntityMapper);
+    public BranchPersistencePort branchPersistencePort(PersistenceResilience persistenceResilience) {
+        return new BranchPersistenceAdapter(branchRepository, branchEntityMapper, persistenceResilience);
     }
 
     @Bean

@@ -8,6 +8,7 @@ import com.franchise.project.domain.util.ValidationCondition;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.product.ProductPersistenceAdapter;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.product.mapper.ProductEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.product.repository.ProductRepository;
+import com.franchise.project.infrastructure.adapters.persistenceadapter.resilience.PersistenceResilience;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +21,8 @@ public class ProductConfig {
 
 
     @Bean
-    public ProductPersistencePort productPersistencePort() {
-        return new ProductPersistenceAdapter(productRepository, productEntityMapper);
+    public ProductPersistencePort productPersistencePort(PersistenceResilience persistenceResilience) {
+        return new ProductPersistenceAdapter(productRepository, productEntityMapper, persistenceResilience);
     }
 
     @Bean
