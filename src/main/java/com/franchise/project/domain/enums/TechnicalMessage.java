@@ -10,6 +10,8 @@ public enum TechnicalMessage {
     INTERNAL_ERROR_IN_ADAPTERS("PRC501","Something went wrong in adapters, please try again", ""),
     INVALID_REQUEST("400", "Bad Request, please verify data", ""),
     INVALID_PARAMETERS(INVALID_REQUEST.getCode(), "Bad Parameters, please verify data", ""),
+    RESOURCE_ALREADY_EXISTS("409", "The resource already exists.", ""),
+    SERVICE_UNAVAILABLE("503", "Service temporarily unavailable, please try again later", ""),
 
     FRANCHISE_CREATED("201", "Franchise created successfully", ""),
     FRANCHISE_NOT_EXISTS("404"," The Franchise are not registered." ,"" ),
