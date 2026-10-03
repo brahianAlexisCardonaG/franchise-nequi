@@ -2,7 +2,9 @@ package com.franchise.project.infrastructure.entrypoints.util.error;
 
 import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.exception.BusinessException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -11,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 @Component
 @RequiredArgsConstructor
@@ -34,6 +37,12 @@ public class ApplyErrorHandler {
                         ex.getTechnicalMessage()))
                 .onErrorResume(ServerWebInputException.class, ex -> buildErrorResponse(
                         HttpStatus.BAD_REQUEST, TechnicalMessage.INVALID_REQUEST))
+                .onErrorResume(DuplicateKeyException.class, ex -> buildErrorResponse(
+                        HttpStatus.CONFLICT, TechnicalMessage.RESOURCE_ALREADY_EXISTS))
+                .onErrorResume(CallNotPermittedException.class, ex -> buildErrorResponse(
+                        HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE))
+                .onErrorResume(TimeoutException.class, ex -> buildErrorResponse(
+                        HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE))
                 .onErrorResume(ex -> buildErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR, TechnicalMessage.INTERNAL_ERROR));
     }

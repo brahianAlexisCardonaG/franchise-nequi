@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 	id 'org.springframework.boot' version '3.5.0'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -23,9 +24,15 @@ repositories {
 	mavenCentral()
 }
 
+ext {
+	resilience4jVersion = '2.3.0'
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation "io.github.resilience4j:resilience4j-spring-boot3:${resilience4jVersion}"
+	implementation "io.github.resilience4j:resilience4j-reactor:${resilience4jVersion}"
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	runtimeOnly 'org.postgresql:r2dbc-postgresql'
@@ -40,18 +47,45 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.1.0'
 }
 
+def coverageExclusions = [
+		'**/FranchiseApplication.class',
+		'**/*MapperImpl.class',
+		'**/*MapperResponseImpl.class'
+]
+
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy tasks.named('jacocoTestReport')
+}
 
-	filter{
-		includeTestsMatching "com.franchise.project.domain.franchise.usecase.*"
-		includeTestsMatching "com.franchise.project.domain.branch.usecase.*"
-		includeTestsMatching "com.franchise.project.domain.product.usecase.*"
-		includeTestsMatching "com.franchise.project.infrastructure.adapters.persistenceadapter.branch.*"
-		includeTestsMatching "com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.*"
-		includeTestsMatching "com.franchise.project.infrastructure.adapters.persistenceadapter.product.*"
-		includeTestsMatching "com.franchise.project.infrastructure.entrypoints.branch.handler.*"
-		includeTestsMatching "com.franchise.project.infrastructure.entrypoints.franchise.handler.*"
-		includeTestsMatching "com.franchise.project.infrastructure.entrypoints.product.handler.*"
+tasks.named('jacocoTestReport') {
+	dependsOn tasks.named('test')
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = true
 	}
+	classDirectories.setFrom(files(classDirectories.files.collect {
+		fileTree(dir: it, exclude: coverageExclusions)
+	}))
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn tasks.named('jacocoTestReport')
+	classDirectories.setFrom(files(classDirectories.files.collect {
+		fileTree(dir: it, exclude: coverageExclusions)
+	}))
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.70
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('jacocoTestCoverageVerification')
 }

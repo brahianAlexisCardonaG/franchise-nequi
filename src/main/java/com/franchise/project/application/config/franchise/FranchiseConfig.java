@@ -9,6 +9,7 @@ import com.franchise.project.domain.util.ValidationCondition;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.FranchisePersistenceAdapter;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.mapper.FranchiseEntityMapper;
 import com.franchise.project.infrastructure.adapters.persistenceadapter.franchise.repository.FranchiseRepository;
+import com.franchise.project.infrastructure.adapters.persistenceadapter.resilience.PersistenceResilience;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,8 +23,8 @@ public class FranchiseConfig {
 
 
     @Bean
-    public FranchisePersistencePort franchisePersistencePort() {
-        return new FranchisePersistenceAdapter(franchiseRepository, franchiseEntityMapper);
+    public FranchisePersistencePort franchisePersistencePort(PersistenceResilience persistenceResilience) {
+        return new FranchisePersistenceAdapter(franchiseRepository, franchiseEntityMapper, persistenceResilience);
     }
 
     @Bean
