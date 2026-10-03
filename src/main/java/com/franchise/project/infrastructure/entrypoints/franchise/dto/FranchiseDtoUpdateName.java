@@ -1,9 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.franchise.dto;
 
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-@Data
-public class FranchiseDtoUpdateName {
-    private Long id;
-    private String name;
+public record FranchiseDtoUpdateName(
+        @Schema(description = "Franchise identifier", example = "1")
+        @NotNull Long id,
+        @Schema(description = "New franchise name", example = "Coffee House Express")
+        @NotBlank String name
+) {
 }

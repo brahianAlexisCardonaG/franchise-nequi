@@ -1,14 +1,13 @@
 package com.franchise.project.infrastructure.entrypoints.branch.response;
 
-import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDto;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Data;
 
-@Data
 @Builder
-public class ApiBranchFranchiseResponse {
-    private String code;
-    private String message;
-    private String date;
-    private BranchFranchiseResponse data;
+public record ApiBranchFranchiseResponse(
+        @Schema(example = "201") String code,
+        @Schema(example = "Branch created successfully") String message,
+        @Schema(example = "2026-01-01T12:00:00Z") String date,
+        BranchFranchiseResponse data
+) {
 }

@@ -1,6 +1,7 @@
 package com.franchise.project.infrastructure.entrypoints.branch.handler;
 
-import com.franchise.project.domain.branch.api.BranchServicePort;
+import com.franchise.project.domain.branch.api.CreateBranchServicePort;
+import com.franchise.project.domain.branch.api.UpdateBranchNameServicePort;
 import com.franchise.project.domain.branch.model.Branch;
 import com.franchise.project.domain.branch.model.BranchFranchise;
 import com.franchise.project.domain.enums.TechnicalMessage;
@@ -9,7 +10,8 @@ import com.franchise.project.domain.franchise.model.Franchise;
 import com.franchise.project.infrastructure.entrypoints.branch.RouterRestBranch;
 import com.franchise.project.infrastructure.entrypoints.branch.mapper.BranchMapperImpl;
 import com.franchise.project.infrastructure.entrypoints.branch.mapper.BranchMapperResponseImpl;
-import com.franchise.project.infrastructure.entrypoints.branch.validations.BranchValidationDto;
+import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
+import jakarta.validation.Validation;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.error.BuildErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,20 +30,22 @@ import static org.mockito.Mockito.when;
 class BranchHandlerImplTest {
 
     @Mock
-    private BranchServicePort branchServicePort;
+    private CreateBranchServicePort createBranchServicePort;
+    @Mock
+    private UpdateBranchNameServicePort updateBranchNameServicePort;
 
     private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
-        BranchHandlerImpl handler = new BranchHandlerImpl(new BranchValidationDto(), new BranchMapperImpl(),
-                new BranchMapperResponseImpl(), branchServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
+        BranchHandlerImpl handler = new BranchHandlerImpl(new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator()), new BranchMapperImpl(),
+                new BranchMapperResponseImpl(), createBranchServicePort, updateBranchNameServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
         webTestClient = WebTestClient.bindToRouterFunction(new RouterRestBranch().routerFunctionBranch(handler)).build();
     }
 
     @Test
     void createBranchReturnsCreated() {
-        when(branchServicePort.createBranch(new Branch(null, "Downtown", 1L)))
+        when(createBranchServicePort.createBranch(new Branch(null, "Downtown", 1L)))
                 .thenReturn(Mono.just(new BranchFranchise(100L, "Downtown", new Franchise(1L, "Franchise1"))));
 
         webTestClient.post().uri("/api/v1/branch")
@@ -65,7 +69,7 @@ class BranchHandlerImplTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 .jsonPath("$.message").isEqualTo(TechnicalMessage.INVALID_PARAMETERS.getMessage());
-        verifyNoInteractions(branchServicePort);
+        verifyNoInteractions(createBranchServicePort, updateBranchNameServicePort);
     }
 
     @Test
@@ -77,12 +81,12 @@ class BranchHandlerImplTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 .jsonPath("$.message").isEqualTo(TechnicalMessage.INVALID_REQUEST.getMessage());
-        verifyNoInteractions(branchServicePort);
+        verifyNoInteractions(createBranchServicePort, updateBranchNameServicePort);
     }
 
     @Test
     void createBranchForUnknownFranchiseReturnsNotFound() {
-        when(branchServicePort.createBranch(new Branch(null, "Downtown", 99L)))
+        when(createBranchServicePort.createBranch(new Branch(null, "Downtown", 99L)))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_NOT_EXISTS)));
 
         webTestClient.post().uri("/api/v1/branch")
@@ -96,7 +100,7 @@ class BranchHandlerImplTest {
 
     @Test
     void updateBranchNameReturnsOk() {
-        when(branchServicePort.updateName(new Branch(5L, "Uptown", null)))
+        when(updateBranchNameServicePort.updateBranchName(new Branch(5L, "Uptown", null)))
                 .thenReturn(Mono.just(new Branch(5L, "Uptown", 1L)));
 
         webTestClient.put().uri("/api/v1/branch/name")
@@ -111,7 +115,7 @@ class BranchHandlerImplTest {
 
     @Test
     void updateBranchNameWithDuplicatedNameReturnsConflict() {
-        when(branchServicePort.updateName(new Branch(5L, "Taken", null)))
+        when(updateBranchNameServicePort.updateBranchName(new Branch(5L, "Taken", null)))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.BRANCH_ALREADY_EXISTS)));
 
         webTestClient.put().uri("/api/v1/branch/name")

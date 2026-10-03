@@ -4,7 +4,6 @@ import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDto;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateName;
 import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUpdateStock;
-import com.franchise.project.infrastructure.entrypoints.product.response.ProductResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
