@@ -3,7 +3,9 @@ package com.franchise.project.infrastructure.entrypoints.franchise.handler;
 import com.franchise.project.domain.branch.model.BranchProduct;
 import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.exception.BusinessException;
-import com.franchise.project.domain.franchise.api.FranchiseServicePort;
+import com.franchise.project.domain.franchise.api.CreateFranchiseServicePort;
+import com.franchise.project.domain.franchise.api.GetTopStockProductsServicePort;
+import com.franchise.project.domain.franchise.api.UpdateFranchiseNameServicePort;
 import com.franchise.project.domain.franchise.model.Franchise;
 import com.franchise.project.domain.franchise.model.FranchiseBranchProductList;
 import com.franchise.project.domain.product.model.Product;
@@ -34,20 +36,25 @@ import static org.mockito.Mockito.when;
 class FranchiseHandlerImplTest {
 
     @Mock
-    private FranchiseServicePort franchiseServicePort;
+    private CreateFranchiseServicePort createFranchiseServicePort;
+    @Mock
+    private GetTopStockProductsServicePort getTopStockProductsServicePort;
+    @Mock
+    private UpdateFranchiseNameServicePort updateFranchiseNameServicePort;
 
     private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
         FranchiseHandlerImpl handler = new FranchiseHandlerImpl(new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator()), new FranchiseMapperImpl(),
-                new FranchiseMapperResponseImpl(), franchiseServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
+                new FranchiseMapperResponseImpl(), createFranchiseServicePort, getTopStockProductsServicePort,
+                updateFranchiseNameServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
         webTestClient = WebTestClient.bindToRouterFunction(new RouterRestFranchise().routerFunctionFranchise(handler)).build();
     }
 
     @Test
     void createFranchiseReturnsCreated() {
-        when(franchiseServicePort.createFranchise(new Franchise(null, "Franchise1")))
+        when(createFranchiseServicePort.createFranchise(new Franchise(null, "Franchise1")))
                 .thenReturn(Mono.just(new Franchise(1L, "Franchise1")));
 
         webTestClient.post().uri("/api/v1/franchise")
@@ -68,7 +75,7 @@ class FranchiseHandlerImplTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus().isBadRequest();
-        verifyNoInteractions(franchiseServicePort);
+        verifyNoInteractions(createFranchiseServicePort, getTopStockProductsServicePort, updateFranchiseNameServicePort);
     }
 
     @Test
@@ -80,12 +87,12 @@ class FranchiseHandlerImplTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 .jsonPath("$.message").isEqualTo(TechnicalMessage.INVALID_PARAMETERS.getMessage());
-        verifyNoInteractions(franchiseServicePort);
+        verifyNoInteractions(createFranchiseServicePort, getTopStockProductsServicePort, updateFranchiseNameServicePort);
     }
 
     @Test
     void createFranchiseWithDuplicatedNameReturnsConflict() {
-        when(franchiseServicePort.createFranchise(new Franchise(null, "Franchise1")))
+        when(createFranchiseServicePort.createFranchise(new Franchise(null, "Franchise1")))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_ALREADY_EXISTS)));
 
         webTestClient.post().uri("/api/v1/franchise")
@@ -98,7 +105,7 @@ class FranchiseHandlerImplTest {
     @Test
     void getTopStockProductsReturnsLargestStockProductPerBranch() {
         Product coffee = new Product(100L, "Coffee", 20, 10L);
-        when(franchiseServicePort.getFranchiseBranchProduct(1L)).thenReturn(Mono.just(new FranchiseBranchProductList(
+        when(getTopStockProductsServicePort.getTopStockProducts(1L)).thenReturn(Mono.just(new FranchiseBranchProductList(
                 1L, "Franchise1", List.of(new BranchProduct(10L, "Downtown", coffee)))));
 
         webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 1)
@@ -118,12 +125,12 @@ class FranchiseHandlerImplTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 .jsonPath("$.message").isEqualTo(TechnicalMessage.INVALID_PARAMETERS.getMessage());
-        verifyNoInteractions(franchiseServicePort);
+        verifyNoInteractions(createFranchiseServicePort, getTopStockProductsServicePort, updateFranchiseNameServicePort);
     }
 
     @Test
     void getTopStockProductsForUnknownFranchiseReturnsNotFound() {
-        when(franchiseServicePort.getFranchiseBranchProduct(99L))
+        when(getTopStockProductsServicePort.getTopStockProducts(99L))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_NOT_EXISTS)));
 
         webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 99)
@@ -133,7 +140,7 @@ class FranchiseHandlerImplTest {
 
     @Test
     void updateFranchiseNameReturnsOk() {
-        when(franchiseServicePort.updateName(new Franchise(1L, "Renamed")))
+        when(updateFranchiseNameServicePort.updateFranchiseName(new Franchise(1L, "Renamed")))
                 .thenReturn(Mono.just(new Franchise(1L, "Renamed")));
 
         webTestClient.put().uri("/api/v1/franchise/name")
@@ -148,7 +155,7 @@ class FranchiseHandlerImplTest {
 
     @Test
     void unexpectedErrorReturnsGenericInternalServerError() {
-        when(franchiseServicePort.getFranchiseBranchProduct(1L))
+        when(getTopStockProductsServicePort.getTopStockProducts(1L))
                 .thenReturn(Mono.error(new IllegalStateException("sensitive internal detail")));
 
         webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 1)
@@ -161,7 +168,7 @@ class FranchiseHandlerImplTest {
 
     @Test
     void openCircuitReturnsServiceUnavailable() {
-        when(franchiseServicePort.getFranchiseBranchProduct(1L)).thenReturn(Mono.error(
+        when(getTopStockProductsServicePort.getTopStockProducts(1L)).thenReturn(Mono.error(
                 CallNotPermittedException.createCallNotPermittedException(CircuitBreaker.ofDefaults("persistence"))));
 
         webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 1)

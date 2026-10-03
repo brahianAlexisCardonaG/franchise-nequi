@@ -4,11 +4,17 @@ import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.exception.BusinessException;
 import reactor.core.publisher.Mono;
 
+import java.util.function.Predicate;
+
 public class ValidationCondition {
-    public Mono<Void> validationExist(Boolean condition, TechnicalMessage technicalMessage) {
-        return Mono.just(condition)
-                .filter(Boolean.FALSE::equals)
-                .switchIfEmpty(Mono.error(() -> new BusinessException(technicalMessage)))
-                .then();
+
+    public <T> Mono<T> validate(T value, Predicate<T> rule, TechnicalMessage technicalMessage) {
+        return Mono.just(value)
+                .filter(rule)
+                .switchIfEmpty(Mono.error(() -> new BusinessException(technicalMessage)));
+    }
+
+    public Mono<Void> rejectIfExists(Boolean exists, TechnicalMessage technicalMessage) {
+        return validate(exists, Boolean.FALSE::equals, technicalMessage).then();
     }
 }

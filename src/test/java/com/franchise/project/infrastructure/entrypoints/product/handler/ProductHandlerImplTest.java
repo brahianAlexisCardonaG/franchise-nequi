@@ -3,7 +3,10 @@ package com.franchise.project.infrastructure.entrypoints.product.handler;
 import com.franchise.project.domain.branch.model.Branch;
 import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.exception.BusinessException;
-import com.franchise.project.domain.product.api.ProductServicePort;
+import com.franchise.project.domain.product.api.CreateProductServicePort;
+import com.franchise.project.domain.product.api.DeleteProductServicePort;
+import com.franchise.project.domain.product.api.UpdateProductNameServicePort;
+import com.franchise.project.domain.product.api.UpdateProductStockServicePort;
 import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.domain.product.model.ProductBranch;
 import com.franchise.project.infrastructure.entrypoints.product.RouterRestProduct;
@@ -33,20 +36,27 @@ class ProductHandlerImplTest {
     private static final Integer STOCK = 10;
 
     @Mock
-    private ProductServicePort productServicePort;
+    private CreateProductServicePort createProductServicePort;
+    @Mock
+    private DeleteProductServicePort deleteProductServicePort;
+    @Mock
+    private UpdateProductStockServicePort updateProductStockServicePort;
+    @Mock
+    private UpdateProductNameServicePort updateProductNameServicePort;
 
     private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
         ProductHandlerImpl handler = new ProductHandlerImpl(new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator()), new ProductMapperImpl(),
-                new ProductMapperResponseImpl(), productServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
+                new ProductMapperResponseImpl(), createProductServicePort, deleteProductServicePort,
+                updateProductStockServicePort, updateProductNameServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
         webTestClient = WebTestClient.bindToRouterFunction(new RouterRestProduct().routerFunctionProduct(handler)).build();
     }
 
     @Test
     void createProductReturnsCreated() {
-        when(productServicePort.createProduct(new Product(null, "Coffee", STOCK, 5L)))
+        when(createProductServicePort.createProduct(new Product(null, "Coffee", STOCK, 5L)))
                 .thenReturn(Mono.just(new ProductBranch(1L, "Coffee", STOCK, new Branch(5L, "Downtown", 1L))));
 
         webTestClient.post().uri("/api/v1/product")
@@ -67,12 +77,12 @@ class ProductHandlerImplTest {
                 .bodyValue("{\"name\":\"Coffee\",\"branchId\":5}")
                 .exchange()
                 .expectStatus().isBadRequest();
-        verifyNoInteractions(productServicePort);
+        verifyNoInteractions(createProductServicePort, deleteProductServicePort, updateProductStockServicePort, updateProductNameServicePort);
     }
 
     @Test
     void createProductWithNegativeStockReturnsBadRequest() {
-        when(productServicePort.createProduct(new Product(null, "Coffee", -3, 5L)))
+        when(createProductServicePort.createProduct(new Product(null, "Coffee", -3, 5L)))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.PRODUCT_STOCK_INVALID)));
 
         webTestClient.post().uri("/api/v1/product")
@@ -86,7 +96,7 @@ class ProductHandlerImplTest {
 
     @Test
     void createProductRaceOnUniqueConstraintReturnsConflict() {
-        when(productServicePort.createProduct(new Product(null, "Coffee", STOCK, 5L)))
+        when(createProductServicePort.createProduct(new Product(null, "Coffee", STOCK, 5L)))
                 .thenReturn(Mono.error(new DuplicateKeyException("uq_product_branch_name")));
 
         webTestClient.post().uri("/api/v1/product")
@@ -100,7 +110,7 @@ class ProductHandlerImplTest {
 
     @Test
     void deleteProductReturnsOk() {
-        when(productServicePort.deleteProductBranch(99L)).thenReturn(Mono.empty());
+        when(deleteProductServicePort.deleteProduct(99L)).thenReturn(Mono.empty());
 
         webTestClient.delete().uri("/api/v1/product/{productId}", 99)
                 .exchange()
@@ -111,7 +121,7 @@ class ProductHandlerImplTest {
 
     @Test
     void deleteUnknownProductReturnsNotFound() {
-        when(productServicePort.deleteProductBranch(99L))
+        when(deleteProductServicePort.deleteProduct(99L))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.PRODUCT_NOT_EXISTS)));
 
         webTestClient.delete().uri("/api/v1/product/{productId}", 99)
@@ -124,12 +134,12 @@ class ProductHandlerImplTest {
         webTestClient.delete().uri("/api/v1/product/{productId}", "abc")
                 .exchange()
                 .expectStatus().isBadRequest();
-        verifyNoInteractions(productServicePort);
+        verifyNoInteractions(createProductServicePort, deleteProductServicePort, updateProductStockServicePort, updateProductNameServicePort);
     }
 
     @Test
     void updateProductStockReturnsOk() {
-        when(productServicePort.updateStock(new Product(1L, null, 50, null)))
+        when(updateProductStockServicePort.updateProductStock(new Product(1L, null, 50, null)))
                 .thenReturn(Mono.just(new Product(1L, "Coffee", 50, 5L)));
 
         webTestClient.put().uri("/api/v1/product/stock")
@@ -143,7 +153,7 @@ class ProductHandlerImplTest {
 
     @Test
     void updateStockOfUnknownProductReturnsNotFound() {
-        when(productServicePort.updateStock(new Product(99L, null, 50, null)))
+        when(updateProductStockServicePort.updateProductStock(new Product(99L, null, 50, null)))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.PRODUCT_NOT_EXISTS)));
 
         webTestClient.put().uri("/api/v1/product/stock")
@@ -155,7 +165,7 @@ class ProductHandlerImplTest {
 
     @Test
     void updateProductNameReturnsOk() {
-        when(productServicePort.updateName(new Product(1L, "Espresso", null, null)))
+        when(updateProductNameServicePort.updateProductName(new Product(1L, "Espresso", null, null)))
                 .thenReturn(Mono.just(new Product(1L, "Espresso", STOCK, 5L)));
 
         webTestClient.put().uri("/api/v1/product/name")
@@ -169,7 +179,7 @@ class ProductHandlerImplTest {
 
     @Test
     void updateProductNameWithDuplicatedNameReturnsConflict() {
-        when(productServicePort.updateName(new Product(1L, "Tea", null, null)))
+        when(updateProductNameServicePort.updateProductName(new Product(1L, "Tea", null, null)))
                 .thenReturn(Mono.error(new BusinessException(TechnicalMessage.PRODUCT_ALREADY_EXISTS)));
 
         webTestClient.put().uri("/api/v1/product/name")
