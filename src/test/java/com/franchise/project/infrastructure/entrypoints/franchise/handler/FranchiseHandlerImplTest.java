@@ -1,17 +1,20 @@
 package com.franchise.project.infrastructure.entrypoints.franchise.handler;
 
+import com.franchise.project.domain.branch.model.BranchProduct;
 import com.franchise.project.domain.enums.TechnicalMessage;
+import com.franchise.project.domain.exception.BusinessException;
 import com.franchise.project.domain.franchise.api.FranchiseServicePort;
 import com.franchise.project.domain.franchise.model.Franchise;
 import com.franchise.project.domain.franchise.model.FranchiseBranchProductList;
-import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDto;
-import com.franchise.project.infrastructure.entrypoints.franchise.dto.FranchiseDtoUpdateName;
-import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapper;
-import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperResponse;
-import com.franchise.project.infrastructure.entrypoints.franchise.response.FranchiseBranchProductListResponse;
-import com.franchise.project.infrastructure.entrypoints.franchise.response.FranchiseResponse;
+import com.franchise.project.domain.product.model.Product;
+import com.franchise.project.infrastructure.entrypoints.franchise.RouterRestFranchise;
+import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperImpl;
+import com.franchise.project.infrastructure.entrypoints.franchise.mapper.FranchiseMapperResponseImpl;
 import com.franchise.project.infrastructure.entrypoints.franchise.validations.FranchiseValidationDto;
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
+import com.franchise.project.infrastructure.entrypoints.util.error.BuildErrorResponse;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,121 +22,140 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.reactive.function.server.RequestPredicates;
-import org.springframework.web.reactive.function.server.RouterFunctions;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.math.BigInteger;
+import java.util.List;
+
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class FranchiseHandlerImplTest {
+class FranchiseHandlerImplTest {
 
-    @Mock
-    private FranchiseValidationDto franchiseValidationDto;
-    @Mock
-    private FranchiseMapper franchiseMapper;
-    @Mock
-    private FranchiseMapperResponse franchiseMapperResponse;
     @Mock
     private FranchiseServicePort franchiseServicePort;
-    @Mock
-    private ApplyErrorHandler applyErrorHandler;
 
-    private FranchiseHandlerImpl handler;
-    private WebTestClient webClient;
+    private WebTestClient webTestClient;
 
     @BeforeEach
-    void setup() {
-        handler = new FranchiseHandlerImpl(
-                franchiseValidationDto,
-                franchiseMapper,
-                franchiseMapperResponse,
-                franchiseServicePort,
-                applyErrorHandler
-        );
-
-
-        var router = RouterFunctions
-                .route(RequestPredicates.POST("/api/v1/franchise"), handler::createFranchise)
-                .andRoute(RequestPredicates.GET("/api/v1/franchise/{franchiseId}/top-stock-products"), handler::getFranchiseIdBranchesProducts)
-                .andRoute(RequestPredicates.PUT("/api/v1/franchise/name"), handler::updateFranchiseName);
-
-        webClient = WebTestClient.bindToRouterFunction(router).
-
-                build();
+    void setUp() {
+        FranchiseHandlerImpl handler = new FranchiseHandlerImpl(new FranchiseValidationDto(), new FranchiseMapperImpl(),
+                new FranchiseMapperResponseImpl(), franchiseServicePort, new ApplyErrorHandler(new BuildErrorResponse()));
+        webTestClient = WebTestClient.bindToRouterFunction(new RouterRestFranchise().routerFunctionFranchise(handler)).build();
     }
 
     @Test
-    void createFranchise_shouldReturnCreatedResponse() {
-        FranchiseDto dto = new FranchiseDto("Franquicia X");
-        Franchise domain = new Franchise(1L, "Franquicia X");
-        FranchiseResponse response = new FranchiseResponse(1L, "Franquicia X");
+    void createFranchiseReturnsCreated() {
+        when(franchiseServicePort.createFranchise(new Franchise(null, "Franchise1")))
+                .thenReturn(Mono.just(new Franchise(1L, "Franchise1")));
 
-        when(franchiseValidationDto.validateFieldNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
-        when(franchiseMapper.toFranchise(dto)).thenReturn(domain);
-        when(franchiseServicePort.createFranchise(any(Franchise.class))).thenReturn(Mono.just(domain));
-        when(franchiseMapperResponse.toFranchiseResponse(domain)).thenReturn(response);
-        when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        webClient.post()
-                .uri("/api/v1/franchise")
+        webTestClient.post().uri("/api/v1/franchise")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(dto)
+                .bodyValue("{\"name\":\"Franchise1\"}")
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody()
                 .jsonPath("$.code").isEqualTo(TechnicalMessage.FRANCHISE_CREATED.getCode())
-                .jsonPath("$.message").isEqualTo(TechnicalMessage.FRANCHISE_CREATED.getMessage())
                 .jsonPath("$.data.id").isEqualTo(1)
-                .jsonPath("$.data.name").isEqualTo("Franquicia X");
+                .jsonPath("$.data.name").isEqualTo("Franchise1");
     }
 
+    @Test
+    void createFranchiseWithoutNameReturnsBadRequest() {
+        webTestClient.post().uri("/api/v1/franchise")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus().isBadRequest();
+        verifyNoInteractions(franchiseServicePort);
+    }
 
     @Test
-    void getFranchiseIdBranchesProducts_shouldReturnOkResponse() {
-        Long franchiseId = 1L;
-        FranchiseBranchProductList domain = new FranchiseBranchProductList();
-        FranchiseBranchProductListResponse response = new FranchiseBranchProductListResponse();
+    void createFranchiseWithDuplicatedNameReturnsConflict() {
+        when(franchiseServicePort.createFranchise(new Franchise(null, "Franchise1")))
+                .thenReturn(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_ALREADY_EXISTS)));
 
-        when(franchiseServicePort.getFranchiseBranchProduct(franchiseId)).thenReturn(Mono.just(domain));
-        when(franchiseMapperResponse.toFranchiseBranchProductListResponse(domain)).thenReturn(response);
-        when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
+        webTestClient.post().uri("/api/v1/franchise")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"name\":\"Franchise1\"}")
+                .exchange()
+                .expectStatus().isEqualTo(409);
+    }
 
-        webClient.get()
-                .uri("/api/v1/franchise/{franchiseId}/top-stock-products", franchiseId)
+    @Test
+    void getTopStockProductsReturnsLargestStockProductPerBranch() {
+        Product coffee = new Product(100L, "Coffee", BigInteger.valueOf(20), 10L);
+        when(franchiseServicePort.getFranchiseBranchProduct(1L)).thenReturn(Mono.just(new FranchiseBranchProductList(
+                1L, "Franchise1", List.of(new BranchProduct(10L, "Downtown", coffee)))));
+
+        webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 1)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.code").isEqualTo(TechnicalMessage.FRANCHISE_BRANCH_PRODUCT_FOUND.getCode())
-                .jsonPath("$.message").isEqualTo(TechnicalMessage.FRANCHISE_BRANCH_PRODUCT_FOUND.getMessage());
+                .jsonPath("$.data.branches[0].name").isEqualTo("Downtown")
+                .jsonPath("$.data.branches[0].product.name").isEqualTo("Coffee")
+                .jsonPath("$.data.branches[0].product.stock").isEqualTo(20);
     }
 
     @Test
-    void updateFranchiseName_shouldReturnOkResponse() {
-        FranchiseDtoUpdateName dto = new FranchiseDtoUpdateName();
-        dto.setId(1L);
-        dto.setName("Franquicia Actualizada");
+    void getTopStockProductsWithNonNumericIdReturnsBadRequest() {
+        webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", "abc")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.message").isEqualTo(TechnicalMessage.INVALID_PARAMETERS.getMessage());
+        verifyNoInteractions(franchiseServicePort);
+    }
 
-        Franchise domain = new Franchise(1L, "Franquicia Actualizada");
-        FranchiseResponse response = new FranchiseResponse(1L, "Franquicia Actualizada");
+    @Test
+    void getTopStockProductsForUnknownFranchiseReturnsNotFound() {
+        when(franchiseServicePort.getFranchiseBranchProduct(99L))
+                .thenReturn(Mono.error(new BusinessException(TechnicalMessage.FRANCHISE_NOT_EXISTS)));
 
-        when(franchiseValidationDto.validateFranchiseDtoNameNotNullOrBlank(dto)).thenReturn(Mono.just(dto));
-        when(franchiseMapper.toFranchiseUpdateName(dto)).thenReturn(domain);
-        when(franchiseServicePort.updateName(any(Franchise.class))).thenReturn(Mono.just(domain));
-        when(franchiseMapperResponse.toFranchiseResponse(domain)).thenReturn(response);
-        when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
+        webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 99)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
 
-        webClient.put()
-                .uri("/api/v1/franchise/name")
+    @Test
+    void updateFranchiseNameReturnsOk() {
+        when(franchiseServicePort.updateName(new Franchise(1L, "Renamed")))
+                .thenReturn(Mono.just(new Franchise(1L, "Renamed")));
+
+        webTestClient.put().uri("/api/v1/franchise/name")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(dto)
+                .bodyValue("{\"id\":1,\"name\":\"Renamed\"}")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.code").isEqualTo(TechnicalMessage.FRANCHISE_UPDATE.getCode())
-                .jsonPath("$.message").isEqualTo(TechnicalMessage.FRANCHISE_UPDATE.getMessage())
-                .jsonPath("$.data.id").isEqualTo(1)
-                .jsonPath("$.data.name").isEqualTo("Franquicia Actualizada");
+                .jsonPath("$.data.name").isEqualTo("Renamed");
+    }
+
+    @Test
+    void unexpectedErrorReturnsGenericInternalServerError() {
+        when(franchiseServicePort.getFranchiseBranchProduct(1L))
+                .thenReturn(Mono.error(new IllegalStateException("sensitive internal detail")));
+
+        webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 1)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody()
+                .jsonPath("$.message").isEqualTo(TechnicalMessage.INTERNAL_ERROR.getMessage())
+                .jsonPath("$.errors[0].message").isEqualTo(TechnicalMessage.INTERNAL_ERROR.getMessage());
+    }
+
+    @Test
+    void openCircuitReturnsServiceUnavailable() {
+        when(franchiseServicePort.getFranchiseBranchProduct(1L)).thenReturn(Mono.error(
+                CallNotPermittedException.createCallNotPermittedException(CircuitBreaker.ofDefaults("persistence"))));
+
+        webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 1)
+                .exchange()
+                .expectStatus().isEqualTo(503)
+                .expectBody()
+                .jsonPath("$.code").isEqualTo(TechnicalMessage.SERVICE_UNAVAILABLE.getCode());
     }
 }

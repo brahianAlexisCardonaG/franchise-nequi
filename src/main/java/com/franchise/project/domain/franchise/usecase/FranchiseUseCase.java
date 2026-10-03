@@ -12,7 +12,6 @@ import com.franchise.project.domain.product.model.Product;
 import com.franchise.project.domain.product.spi.ProductPersistencePort;
 import com.franchise.project.domain.util.ValidationCondition;
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Comparator;
@@ -40,10 +39,8 @@ public class FranchiseUseCase implements FranchiseServicePort {
                 .switchIfEmpty(Mono.error(() -> new BusinessException(TechnicalMessage.FRANCHISE_NOT_EXISTS)))
                 .flatMap(franchise ->
                         branchPersistencePort.findBranchesByFranchiseId(franchiseId)
-                                .flatMapMany(Flux::fromIterable)
                                 .flatMap(branch ->
                                         productPersistencePort.findProductByBranchId(branch.getId())
-                                                .flatMapMany(Flux::fromIterable)
                                                 .reduce(BinaryOperator.maxBy(Comparator.comparing(Product::getStock)))
                                                 .map(maxProduct -> new BranchProduct(
                                                         branch.getId(),
