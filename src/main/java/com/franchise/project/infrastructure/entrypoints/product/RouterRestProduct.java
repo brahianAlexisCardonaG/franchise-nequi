@@ -60,20 +60,20 @@ public class RouterRestProduct {
                     )
             ),
             @RouterOperation(
-                    path = PATH_PRODUCT,
+                    path = PATH_PRODUCT_BY_ID,
                     produces = {"application/json"},
                     method = RequestMethod.DELETE,
                     beanClass = ProductHandlerImpl.class,
                     beanMethod = "deleteProductBranch",
                     operation = @Operation(
                             operationId = "deleteProductBranch",
-                            summary = "Delete Product relate with Branch",
+                            summary = "Delete a product from its branch",
                             tags = {"Endpoints Product"},
                             parameters = {
                                     @io.swagger.v3.oas.annotations.Parameter(
-                                            in = ParameterIn.QUERY,
-                                            name = "productId",
-                                            description = "productId",
+                                            in = ParameterIn.PATH,
+                                            name = PRODUCT_ID_PATH_VARIABLE,
+                                            description = "Product identifier",
                                             example = "1",
                                             required = true
                                     )
@@ -81,7 +81,7 @@ public class RouterRestProduct {
                             responses = {
                                     @ApiResponse(
                                             responseCode = "200",
-                                            description = "Product relate with Branch deleted successfully",
+                                            description = "Product deleted successfully",
                                             content = @Content(schema = @Schema(implementation
                                                     = ApiResponseMessage.class))
                                     )
@@ -148,7 +148,7 @@ public class RouterRestProduct {
     public RouterFunction<ServerResponse> routerFunctionProduct(ProductHandlerImpl productHandler) {
         return RouterFunctions
                 .route(POST(PATH_PRODUCT), productHandler::createProduct)
-                .andRoute(DELETE(PATH_PRODUCT), productHandler::deleteProductBranch)
+                .andRoute(DELETE(PATH_PRODUCT_BY_ID), productHandler::deleteProductBranch)
                 .andRoute(PUT(PATH_PRODUCT_UPDATE_STOCK), productHandler::updateProductStock)
                 .andRoute(PUT(PATH_PRODUCT_UPDATE_NAME), productHandler::updateProductName);
 

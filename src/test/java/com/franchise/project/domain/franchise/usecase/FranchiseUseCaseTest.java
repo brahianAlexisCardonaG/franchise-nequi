@@ -59,7 +59,6 @@ public class FranchiseUseCaseTest {
 
         StepVerifier.create(result)
                 .assertNext(franchise -> {
-                    // Verify that the returned franchise is the created one.
                     org.junit.jupiter.api.Assertions.assertEquals(createdFranchise.getId(), franchise.getId());
                     org.junit.jupiter.api.Assertions.assertEquals(createdFranchise.getName(), franchise.getName());
                 })
@@ -80,7 +79,6 @@ public class FranchiseUseCaseTest {
         Product product2 = new Product(101L, "Product2", BigInteger.valueOf(20), branch.getId());
 
         when(franchisePersistencePort.findById(franchiseId)).thenReturn(Mono.just(franchise));
-        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_NOT_EXISTS)).thenReturn(Mono.empty());
         when(branchPersistencePort.findBranchesByFranchiseId(franchiseId))
                 .thenReturn(Mono.just(Collections.singletonList(branch)));
         when(productPersistencePort.findProductByBranchId(branch.getId()))
@@ -114,7 +112,6 @@ public class FranchiseUseCaseTest {
         branch.setFranchiseId(franchiseId);
 
         when(franchisePersistencePort.findById(franchiseId)).thenReturn(Mono.just(franchise));
-        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_NOT_EXISTS)).thenReturn(Mono.empty());
         when(branchPersistencePort.findBranchesByFranchiseId(franchiseId))
                 .thenReturn(Mono.just(Collections.singletonList(branch)));
         when(productPersistencePort.findProductByBranchId(branch.getId()))
@@ -143,7 +140,6 @@ public class FranchiseUseCaseTest {
         Franchise updatedFranchise = new Franchise(1L, "UpdatedName");
 
         when(franchisePersistencePort.findById(1L)).thenReturn(Mono.just(existingFranchise));
-        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_NOT_EXISTS)).thenReturn(Mono.empty());
         when(franchisePersistencePort.findByName("UpdatedName")).thenReturn(Mono.just(false));
         when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_ALREADY_EXISTS)).thenReturn(Mono.empty());
         when(franchisePersistencePort.updateFranchise(new Franchise(1L, "UpdatedName"))).thenReturn(Mono.just(updatedFranchise));

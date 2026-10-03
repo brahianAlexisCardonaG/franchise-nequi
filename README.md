@@ -37,10 +37,9 @@ POST /api/v1/franchise → Create franchise
   "name": "macdonals" //name of franchise
 }
 
-GET /api/v1/franchise → Get franchise
-//sending the franchise ID as a parameter, we can obtain the branches and the products with the largest stock associated with those branches.
+GET /api/v1/franchise/{franchiseId}/top-stock-products → Get the product with the largest stock of each branch of a franchise
 
-PATCH /api/v1/franchise/name → Update name of franchise (plus)
+PUT /api/v1/franchise/name → Update name of franchise (plus)
 //
 {
   "id": 1,  //id of the feanchise to change name
@@ -69,8 +68,7 @@ POST /api/v1/product → Save product
   "branchId": 1 // id of the associated branch
 }
 
-DELETE /api/v1/product → Delete Product of Branch producto
-//sending the product ID as a parameter, we can disassociate the product and the products with associated branches.
+DELETE /api/v1/product/{productId} → Delete a product from its branch
 
 PUT /api/v1/product/stock → Update stock of product
 {

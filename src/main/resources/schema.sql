@@ -1,10 +1,9 @@
--- Table: franchise
 CREATE TABLE IF NOT EXISTS franchise (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    CONSTRAINT uq_franchise_name UNIQUE (name)
 );
 
--- Table: branch
 CREATE TABLE IF NOT EXISTS branch (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -12,17 +11,19 @@ CREATE TABLE IF NOT EXISTS branch (
     CONSTRAINT fk_franchise
         FOREIGN KEY (franchise_id)
         REFERENCES franchise(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT uq_branch_franchise_name UNIQUE (franchise_id, name)
 );
 
--- Table: product
 CREATE TABLE IF NOT EXISTS product (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     stock INT NOT NULL DEFAULT 0,
-    branch_id INT NULL,
+    branch_id INT NOT NULL,
     CONSTRAINT fk_branch
         FOREIGN KEY (branch_id)
         REFERENCES branch(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT uq_product_branch_name UNIQUE (branch_id, name),
+    CONSTRAINT ck_product_stock_non_negative CHECK (stock >= 0)
 );

@@ -22,11 +22,8 @@ public class BranchPersistenceAdapter implements BranchPersistencePort {
     }
 
     @Override
-    public Mono<Boolean> existByName(String name) {
-        return branchRepository.findByName(name)
-                .map(branchEntityMapper::toModel)
-                .map(tech -> true)
-                .defaultIfEmpty(false);
+    public Mono<Boolean> existsByNameAndFranchiseId(String name, Long franchiseId) {
+        return branchRepository.existsByNameAndFranchiseId(name, franchiseId);
     }
 
     @Override
