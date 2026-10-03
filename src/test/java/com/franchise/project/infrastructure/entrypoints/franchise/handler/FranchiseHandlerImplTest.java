@@ -56,7 +56,7 @@ public class FranchiseHandlerImplTest {
 
         var router = RouterFunctions
                 .route(RequestPredicates.POST("/api/v1/franchise"), handler::createFranchise)
-                .andRoute(RequestPredicates.GET("/api/v1/franchise").and(RequestPredicates.queryParam("franchiseId", v -> true)), handler::getFranchiseIdBranchesProducts)
+                .andRoute(RequestPredicates.GET("/api/v1/franchise/{franchiseId}/top-stock-products"), handler::getFranchiseIdBranchesProducts)
                 .andRoute(RequestPredicates.PUT("/api/v1/franchise/name"), handler::updateFranchiseName);
 
         webClient = WebTestClient.bindToRouterFunction(router).
@@ -93,17 +93,15 @@ public class FranchiseHandlerImplTest {
     @Test
     void getFranchiseIdBranchesProducts_shouldReturnOkResponse() {
         Long franchiseId = 1L;
-        FranchiseBranchProductList domain = new FranchiseBranchProductList(); // puedes poblar si deseas
-        FranchiseBranchProductListResponse response = new FranchiseBranchProductListResponse(); // igual
+        FranchiseBranchProductList domain = new FranchiseBranchProductList();
+        FranchiseBranchProductListResponse response = new FranchiseBranchProductListResponse();
 
         when(franchiseServicePort.getFranchiseBranchProduct(franchiseId)).thenReturn(Mono.just(domain));
         when(franchiseMapperResponse.toFranchiseBranchProductListResponse(domain)).thenReturn(response);
         when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
 
         webClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/api/v1/franchise")
-                        .queryParam("franchiseId", franchiseId.toString())
-                        .build())
+                .uri("/api/v1/franchise/{franchiseId}/top-stock-products", franchiseId)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -112,7 +110,7 @@ public class FranchiseHandlerImplTest {
     }
 
     @Test
-    void updateFranchiseName_shouldReturnCreatedResponse() {
+    void updateFranchiseName_shouldReturnOkResponse() {
         FranchiseDtoUpdateName dto = new FranchiseDtoUpdateName();
         dto.setId(1L);
         dto.setName("Franquicia Actualizada");
@@ -131,10 +129,10 @@ public class FranchiseHandlerImplTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(dto)
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.code").isEqualTo(TechnicalMessage.PRODUCT_UPDATE.getCode())
-                .jsonPath("$.message").isEqualTo(TechnicalMessage.PRODUCT_UPDATE.getMessage())
+                .jsonPath("$.code").isEqualTo(TechnicalMessage.FRANCHISE_UPDATE.getCode())
+                .jsonPath("$.message").isEqualTo(TechnicalMessage.FRANCHISE_UPDATE.getMessage())
                 .jsonPath("$.data.id").isEqualTo(1)
                 .jsonPath("$.data.name").isEqualTo("Franquicia Actualizada");
     }

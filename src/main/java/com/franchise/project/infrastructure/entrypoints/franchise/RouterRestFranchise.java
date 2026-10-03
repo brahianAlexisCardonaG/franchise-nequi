@@ -60,20 +60,20 @@ public class RouterRestFranchise {
                     )
             ),
             @RouterOperation(
-                    path = PATH_FRANCHISE,
+                    path = PATH_FRANCHISE_TOP_STOCK_PRODUCTS,
                     produces = {"application/json"},
                     method = RequestMethod.GET,
                     beanClass = FranchiseHandlerImpl.class,
                     beanMethod = "getFranchiseIdBranchesProducts",
                     operation = @Operation(
                             operationId = "getFranchiseIdBranchesProducts",
-                            summary = "Get Product largest stock by branch. franchiseId",
+                            summary = "Get the product with the largest stock of each branch of a franchise",
                             tags = { "Endpoints Franchise" },
                             parameters = {
                                     @io.swagger.v3.oas.annotations.Parameter(
-                                            in = ParameterIn.QUERY,
-                                            name = "franchiseId",
-                                            description = "franchiseId",
+                                            in = ParameterIn.PATH,
+                                            name = FRANCHISE_ID_PATH_VARIABLE,
+                                            description = "Franchise identifier",
                                             example = "1",
                                             required = true
                                     )
@@ -81,7 +81,7 @@ public class RouterRestFranchise {
                             responses = {
                                     @ApiResponse(
                                             responseCode = "200",
-                                            description = "Product relate with Branch deleted successfully",
+                                            description = "Largest stock product per branch found",
                                             content = @Content(schema = @Schema(implementation
                                                     = ApiFranchiseBranchProductResponse.class))
                                     )
@@ -121,7 +121,7 @@ public class RouterRestFranchise {
     public RouterFunction<ServerResponse> routerFunctionFranchise(FranchiseHandlerImpl franchiseHandler) {
         return RouterFunctions
                 .route(POST(PATH_FRANCHISE), franchiseHandler::createFranchise)
-                .andRoute(GET(PATH_FRANCHISE), franchiseHandler::getFranchiseIdBranchesProducts)
+                .andRoute(GET(PATH_FRANCHISE_TOP_STOCK_PRODUCTS), franchiseHandler::getFranchiseIdBranchesProducts)
                 .andRoute(PUT(PATH_FRANCHISE_UPDATE_NAME), franchiseHandler::updateFranchiseName)
                 ;
 

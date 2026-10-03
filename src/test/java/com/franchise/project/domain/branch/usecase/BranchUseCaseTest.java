@@ -37,11 +37,9 @@ public class BranchUseCaseTest {
         Franchise franchise = new Franchise(1L, "Franchise1");
         Branch branchCreated = new Branch(100L, "Branch1", 1L);
 
-        // Mock validaciones
-        when(branchPersistencePort.existByName("Branch1")).thenReturn(Mono.just(false));
+        when(branchPersistencePort.existsByNameAndFranchiseId("Branch1", 1L)).thenReturn(Mono.just(false));
         when(validationCondition.validationExist(false, TechnicalMessage.BRANCH_ALREADY_EXISTS)).thenReturn(Mono.empty());
         when(franchisePersistencePort.findById(1L)).thenReturn(Mono.just(franchise));
-        when(validationCondition.validationExist(false, TechnicalMessage.FRANCHISE_NOT_EXISTS)).thenReturn(Mono.empty());
         when(branchPersistencePort.createBranch(branch)).thenReturn(Mono.just(branchCreated));
 
         Mono<BranchFranchise> result = branchUseCase.createBranch(branch);
@@ -62,8 +60,7 @@ public class BranchUseCaseTest {
         Branch branchUpdated = new Branch(100L, "UpdatedName", 1L);
 
         when(branchPersistencePort.findById(100L)).thenReturn(Mono.just(branchExisting));
-        when(validationCondition.validationExist(false, TechnicalMessage.BRANCH_NOT_EXISTS)).thenReturn(Mono.empty());
-        when(branchPersistencePort.existByName("UpdatedName")).thenReturn(Mono.just(false));
+        when(branchPersistencePort.existsByNameAndFranchiseId("UpdatedName", 1L)).thenReturn(Mono.just(false));
         when(validationCondition.validationExist(false, TechnicalMessage.BRANCH_ALREADY_EXISTS)).thenReturn(Mono.empty());
         when(branchPersistencePort.updateBranch(any(Branch.class))).thenReturn(Mono.just(branchUpdated));
 

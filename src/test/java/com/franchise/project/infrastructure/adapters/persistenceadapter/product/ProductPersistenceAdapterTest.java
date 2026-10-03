@@ -16,6 +16,7 @@ import reactor.test.StepVerifier;
 import java.math.BigInteger;
 import java.util.List;
 
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -63,26 +64,23 @@ public class ProductPersistenceAdapterTest {
     }
 
     @Test
-    void shouldReturnTrueWhenProductExistsByName() {
+    void shouldReturnTrueWhenProductExistsByNameInBranch() {
         String name = "Product A";
-        Product product = getSampleProduct();
-        ProductEntity entity = getSampleProductEntity();
 
-        when(productRepository.findByName(name)).thenReturn(Mono.just(entity));
-        when(productEntityMapper.toModel(entity)).thenReturn(product);
+        when(productRepository.existsByNameAndBranchId(name, 100L)).thenReturn(Mono.just(true));
 
-        StepVerifier.create(adapter.findByName(name))
+        StepVerifier.create(adapter.existsByNameAndBranchId(name, 100L))
                 .expectNext(true)
                 .verifyComplete();
     }
 
     @Test
-    void shouldReturnFalseWhenProductDoesNotExistByName() {
+    void shouldReturnFalseWhenProductDoesNotExistByNameInBranch() {
         String name = "Nonexistent";
 
-        when(productRepository.findByName(name)).thenReturn(Mono.empty());
+        when(productRepository.existsByNameAndBranchId(name, 100L)).thenReturn(Mono.just(false));
 
-        StepVerifier.create(adapter.findByName(name))
+        StepVerifier.create(adapter.existsByNameAndBranchId(name, 100L))
                 .expectNext(false)
                 .verifyComplete();
     }
@@ -102,18 +100,14 @@ public class ProductPersistenceAdapterTest {
     }
 
     @Test
-    void shouldDeleteRelateProductBranchSuccessfully() {
-        Product originalProduct = getSampleProduct();
-        ProductEntity productEntity = getSampleProductEntity();
+    void shouldDeleteProductByIdSuccessfully() {
+        when(productRepository.deleteById(1L)).thenReturn(Mono.empty());
 
-        when(productEntityMapper.toEntity(originalProduct)).thenReturn(productEntity);
-        when(productRepository.save(productEntity)).thenReturn(Mono.just(productEntity));
-        when(productEntityMapper.toModel(productEntity)).thenReturn(originalProduct);
-
-        Mono<Void> result = adapter.deleteRelateProductBranch(originalProduct);
+        Mono<Void> result = adapter.deleteById(1L);
 
         StepVerifier.create(result)
                 .verifyComplete();
+        verify(productRepository).deleteById(1L);
     }
 
     @Test

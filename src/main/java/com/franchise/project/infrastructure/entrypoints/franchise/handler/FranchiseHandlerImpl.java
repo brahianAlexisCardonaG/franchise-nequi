@@ -24,6 +24,7 @@ import reactor.util.context.Context;
 import java.time.Instant;
 
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.FRANCHISE_ERROR;
+import static com.franchise.project.infrastructure.entrypoints.util.Constants.FRANCHISE_ID_PATH_VARIABLE;
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.X_MESSAGE_ID;
 
 @Component
@@ -59,13 +60,9 @@ public class FranchiseHandlerImpl {
     }
 
     public Mono<ServerResponse> getFranchiseIdBranchesProducts(ServerRequest request) {
-
-        Long franchiseId = request
-                .queryParam("franchiseId")
-                .map(Long::parseLong)
-                .orElseThrow(() -> new BusinessException(TechnicalMessage.FRANCHISE_ID_REQUIRED));
-
-        Mono<ServerResponse> response = franchiseServicePort.getFranchiseBranchProduct(franchiseId)
+        Mono<ServerResponse> response = Mono.fromCallable(() -> Long.parseLong(request.pathVariable(FRANCHISE_ID_PATH_VARIABLE)))
+                .onErrorMap(NumberFormatException.class, ex -> new BusinessException(TechnicalMessage.INVALID_PARAMETERS))
+                .flatMap(franchiseServicePort::getFranchiseBranchProduct)
                 .map(franchiseMapperResponse::toFranchiseBranchProductListResponse)
                 .flatMap(franchise ->
                 ServerResponse.status(HttpStatus.OK)
@@ -89,14 +86,14 @@ public class FranchiseHandlerImpl {
                 .map(franchiseMapper::toFranchiseUpdateName)
                 .flatMap(franchiseServicePort::updateName)
                 .map(franchiseMapperResponse::toFranchiseResponse)
-                .flatMap( productResp ->
-                        ServerResponse.status(HttpStatus.CREATED)
+                .flatMap( franchiseResp ->
+                        ServerResponse.status(HttpStatus.OK)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(ApiFranchiseResponse.builder()
-                                        .code(TechnicalMessage.PRODUCT_UPDATE.getCode())
-                                        .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
+                                        .code(TechnicalMessage.FRANCHISE_UPDATE.getCode())
+                                        .message(TechnicalMessage.FRANCHISE_UPDATE.getMessage())
                                         .date(Instant.now().toString())
-                                        .data(productResp)
+                                        .data(franchiseResp)
                                         .build())
                 )
                 .contextWrite(Context.of(X_MESSAGE_ID, ""))

@@ -40,11 +40,10 @@ public class ProductUseCaseTest {
         Branch branch = new Branch(10L, "Branch10", 1L);
         Product savedProduct = new Product(100L, "Product1", BigInteger.valueOf(50), 10L);
 
-        when(productPersistencePort.findByName("Product1")).thenReturn(Mono.just(false));
+        when(productPersistencePort.existsByNameAndBranchId("Product1", 10L)).thenReturn(Mono.just(false));
         when(validationCondition.validationExist(false, TechnicalMessage.PRODUCT_ALREADY_EXISTS)).thenReturn(Mono.empty());
 
         when(branchPersistencePort.findById(10L)).thenReturn(Mono.just(branch));
-        when(validationCondition.validationExist(false, TechnicalMessage.BRANCH_NOT_EXISTS)).thenReturn(Mono.empty());
 
         when(productPersistencePort.createProduct(product)).thenReturn(Mono.just(savedProduct));
 
@@ -66,8 +65,7 @@ public class ProductUseCaseTest {
         Product product = new Product(productId, "Product1", BigInteger.valueOf(50), 10L);
 
         when(productPersistencePort.findById(productId)).thenReturn(Mono.just(product));
-        when(validationCondition.validationExist(false, TechnicalMessage.PRODUCT_NOT_EXISTS)).thenReturn(Mono.empty());
-        when(productPersistencePort.deleteRelateProductBranch(any(Product.class))).thenReturn(Mono.empty());
+        when(productPersistencePort.deleteById(productId)).thenReturn(Mono.empty());
 
         Mono<Void> result = productUseCase.deleteProductBranch(productId);
 
@@ -81,7 +79,6 @@ public class ProductUseCaseTest {
         Product updatedProduct = new Product(100L, "Product1", BigInteger.valueOf(100), 10L);
 
         when(productPersistencePort.findById(100L)).thenReturn(Mono.just(existingProduct));
-        when(validationCondition.validationExist(false, TechnicalMessage.PRODUCT_NOT_EXISTS)).thenReturn(Mono.empty());
         when(productPersistencePort.updateProduct(any(Product.class))).thenReturn(Mono.just(updatedProduct));
 
         Mono<Product> result = productUseCase.updateStock(inputProduct);
@@ -100,9 +97,8 @@ public class ProductUseCaseTest {
         Product updatedProduct = new Product(100L, "UpdatedProduct", BigInteger.valueOf(50), 10L);
 
         when(productPersistencePort.findById(100L)).thenReturn(Mono.just(existingProduct));
-        when(validationCondition.validationExist(false, TechnicalMessage.PRODUCT_NOT_EXISTS)).thenReturn(Mono.empty());
 
-        when(productPersistencePort.findByName("UpdatedProduct")).thenReturn(Mono.just(false));
+        when(productPersistencePort.existsByNameAndBranchId("UpdatedProduct", 10L)).thenReturn(Mono.just(false));
         when(validationCondition.validationExist(false, TechnicalMessage.PRODUCT_ALREADY_EXISTS)).thenReturn(Mono.empty());
 
         when(productPersistencePort.updateProduct(any(Product.class))).thenReturn(Mono.just(updatedProduct));
