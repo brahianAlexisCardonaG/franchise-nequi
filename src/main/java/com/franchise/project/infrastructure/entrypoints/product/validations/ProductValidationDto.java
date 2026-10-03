@@ -8,28 +8,29 @@ import com.franchise.project.infrastructure.entrypoints.product.dto.ProductDtoUp
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
+
 @Component
 public class ProductValidationDto {
 
     public Mono<ProductDto> validateDtoCreateNotNullOrBlank(ProductDto dto) {
-        if ( dto.getName() == null || dto.getStock() == null || dto.getBranchId() == null) {
-            return Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS));
-        }
-        return Mono.just(dto);
+        return Mono.just(dto)
+                .filter(product -> Objects.nonNull(product.getName())
+                        && Objects.nonNull(product.getStock())
+                        && Objects.nonNull(product.getBranchId()))
+                .switchIfEmpty(Mono.error(() -> new BusinessException(TechnicalMessage.INVALID_PARAMETERS)));
     }
 
     public Mono<ProductDtoUpdateStock> validateDtoUpdateStockNotNullOrBlank(ProductDtoUpdateStock dto){
-        if ( dto.getId() == null || dto.getStock() == null ) {
-            return Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS));
-        }
-        return Mono.just(dto);
+        return Mono.just(dto)
+                .filter(product -> Objects.nonNull(product.getId()) && Objects.nonNull(product.getStock()))
+                .switchIfEmpty(Mono.error(() -> new BusinessException(TechnicalMessage.INVALID_PARAMETERS)));
     }
 
     public Mono<ProductDtoUpdateName> validateDtoUpdateNameNotNullOrBlank(ProductDtoUpdateName dto){
-        if ( dto.getId() == null || dto.getName() == null ) {
-            return Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS));
-        }
-        return Mono.just(dto);
+        return Mono.just(dto)
+                .filter(product -> Objects.nonNull(product.getId()) && Objects.nonNull(product.getName()))
+                .switchIfEmpty(Mono.error(() -> new BusinessException(TechnicalMessage.INVALID_PARAMETERS)));
     }
 
 }

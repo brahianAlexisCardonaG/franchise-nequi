@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface ProductPersistencePort {
     Mono<Product> createProduct(Product product);
-    Mono<Boolean> findByName(String name);
+    Mono<Boolean> existsByNameAndBranchId(String name, Long branchId);
     Mono<Product> findById(Long id);
-    Mono<Void> deleteRelateProductBranch(Product product);
+    Mono<Void> deleteById(Long id);
     Mono<Product> updateProduct(Product product);
     Mono<List<Product>> findProductByBranchId(Long branchId);
 }

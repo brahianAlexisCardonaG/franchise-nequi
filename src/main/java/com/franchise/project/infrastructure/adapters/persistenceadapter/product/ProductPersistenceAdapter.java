@@ -23,11 +23,8 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     }
 
     @Override
-    public Mono<Boolean> findByName(String name) {
-        return productRepository.findByName(name)
-                .map(productEntityMapper::toModel)
-                .map(tech -> true)
-                .defaultIfEmpty(false);
+    public Mono<Boolean> existsByNameAndBranchId(String name, Long branchId) {
+        return productRepository.existsByNameAndBranchId(name, branchId);
     }
 
     @Override
@@ -37,10 +34,8 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
     }
 
     @Override
-    public Mono<Void> deleteRelateProductBranch(Product product) {
-        return productRepository.save(productEntityMapper.toEntity(product))
-                .map(productEntityMapper::toModel)
-                .then();
+    public Mono<Void> deleteById(Long id) {
+        return productRepository.deleteById(id);
     }
 
     @Override

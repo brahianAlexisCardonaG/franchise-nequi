@@ -55,7 +55,7 @@ public class ProductHandlerImplTest {
 
         var router = RouterFunctions
                 .route(RequestPredicates.POST("/api/v1/product"), handler::createProduct)
-                .andRoute(RequestPredicates.DELETE("/api/v1/product"), handler::deleteProductBranch)
+                .andRoute(RequestPredicates.DELETE("/api/v1/product/{productId}"), handler::deleteProductBranch)
                 .andRoute(RequestPredicates.PUT("/api/v1/product/stock"), handler::updateProductStock)
                 .andRoute(RequestPredicates.PUT("/api/v1/product/name"), handler::updateProductName);
 
@@ -91,25 +91,23 @@ public class ProductHandlerImplTest {
     }
 
     @Test
-    void deleteProductBranch_shouldReturnCreatedMessage() {
+    void deleteProductBranch_shouldReturnOkMessage() {
         Long productId = 99L;
 
         when(productServicePort.deleteProductBranch(productId)).thenReturn(Mono.empty());
         when(applyErrorHandler.applyErrorHandling(any())).thenAnswer(inv -> inv.getArgument(0));
 
         webClient.delete()
-                .uri(uriBuilder -> uriBuilder.path("/api/v1/product")
-                        .queryParam("productId", productId.toString())
-                        .build())
+                .uri("/api/v1/product/{productId}", productId)
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.code").isEqualTo(TechnicalMessage.PRODUCT_BRANCH_DELETE.getCode())
                 .jsonPath("$.message").isEqualTo(TechnicalMessage.PRODUCT_BRANCH_DELETE.getMessage());
     }
 
     @Test
-    void updateProductStock_shouldReturnCreatedWithProductData() {
+    void updateProductStock_shouldReturnOkWithProductData() {
         ProductDtoUpdateStock dto = new ProductDtoUpdateStock();
         dto.setId(1L);
         dto.setStock(BigInteger.valueOf(50));
@@ -131,7 +129,7 @@ public class ProductHandlerImplTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(dto)
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.code").isEqualTo(TechnicalMessage.PRODUCT_UPDATE.getCode())
                 .jsonPath("$.data.id").isEqualTo(1)
