@@ -1,0 +1,15 @@
+environment        = "prod"
+aws_region         = "us-east-1"
+vpc_cidr           = "10.20.0.0/16"
+enable_nat_gateway = true
+image_tag          = "<git-commit-hash>"
+
+task_cpu    = 512
+task_memory = 1024
+min_tasks   = 2
+max_tasks   = 4
+
+database_instance_class        = "db.t4g.small"
+database_multi_az              = true
+database_backup_retention_days = 7
+database_deletion_protection   = true

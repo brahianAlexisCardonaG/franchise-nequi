@@ -1,25 +1,51 @@
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "franchiseEcsExecutionRole"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Principal = { Service = "ecs-tasks.amazonaws.com" },
-      Action = "sts:AssumeRole"
-    }]
-  })
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+data "aws_iam_policy_document" "execution" {
+  statement {
+    sid       = "EcrAuthorizationTokenHasNoResourceLevelPermissions"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "PullApiImage"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage",
+    ]
+    resources = [var.ecr_repository_arn]
+  }
+
+  statement {
+    sid       = "WriteApiLogs"
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["${var.log_group_arn}:*"]
+  }
+
+  statement {
+    sid       = "ReadDatabaseCredentials"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [var.database_secret_arn]
+  }
 }
 
-resource "aws_iam_role_policy_attachment" "ssm_read_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+resource "aws_iam_role" "execution" {
+  name               = "${var.name}-ecs-execution"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
-output "ecs_task_execution_role_arn" {
-  value = aws_iam_role.ecs_task_execution_role.arn
+resource "aws_iam_role_policy" "execution" {
+  name   = "${var.name}-ecs-execution"
+  role   = aws_iam_role.execution.id
+  policy = data.aws_iam_policy_document.execution.json
 }
