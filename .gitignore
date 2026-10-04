@@ -44,3 +44,7 @@ out/
 .terraform/
 .env
 *.pem
+
+### local assistant configuration ###
+CLAUDE.md
+.claude/

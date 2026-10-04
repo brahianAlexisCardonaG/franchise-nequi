@@ -14,4 +14,3 @@ terraform
 *.pem
 *.md
 docker-compose.yml
-fileCloudformation.yml
