@@ -48,3 +48,4 @@ out/
 ### local assistant configuration ###
 CLAUDE.md
 .claude/
+backend.hcl

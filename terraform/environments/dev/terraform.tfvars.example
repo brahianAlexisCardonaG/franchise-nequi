@@ -1,0 +1,15 @@
+environment        = "dev"
+aws_region         = "us-east-1"
+vpc_cidr           = "10.10.0.0/16"
+enable_nat_gateway = false
+image_tag          = "<git-commit-hash>"
+
+task_cpu    = 256
+task_memory = 1024
+min_tasks   = 1
+max_tasks   = 2
+
+database_instance_class        = "db.t4g.micro"
+database_multi_az              = false
+database_backup_retention_days = 0
+database_deletion_protection   = false
