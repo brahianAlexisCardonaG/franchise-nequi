@@ -125,7 +125,7 @@ curl -X DELETE localhost:8085/api/v1/product/1
 |---|---|---|
 | Docker + Docker Compose | Docker 24+ | Running the database and the API |
 | Java (JDK) | 17 | Running the API or the tests outside Docker |
-| AWS CLI and Terraform | AWS CLI 2, Terraform 1.6+ | Only for the AWS deployment |
+| AWS CLI and Terraform | AWS CLI 2, Terraform 1.10+ | Only for the AWS deployment |
 
 Gradle does not need to be installed: the project ships with the Gradle wrapper.
 
@@ -222,12 +222,131 @@ Every persistence call goes through `PersistenceResilience`:
 
 ## Deployment on AWS
 
-The infrastructure is defined with Terraform in the `terraform/` folder. Copy
-`terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and fill in your values before running
-any Terraform command.
+The whole infrastructure is defined with Terraform (`terraform/`) and is designed to run a short-lived
+environment for a few cents a day.
 
-The Terraform code is being refactored into reusable modules (networking, ECR, ECS Fargate, ALB, Secrets
-Manager, IAM and auto scaling) with remote state and separate environments. The step-by-step deployment guide
-will be added together with that refactor.
+```mermaid
+flowchart LR
+    internet([Internet]) -->|HTTP 80| alb[Application Load Balancer<br/>public subnets]
+    alb -->|8085| ecs[ECS Fargate tasks<br/>SG: only from the ALB]
+    ecs -->|5432| rds[(RDS PostgreSQL<br/>private subnets, not public)]
+    ecs -.pull image.-> ecr[ECR]
+    ecs -.read credentials.-> sm[Secrets Manager]
+    ecs -.logs.-> cw[CloudWatch Logs]
+    autoscaling[Auto Scaling<br/>CPU target 70%] -.-> ecs
+```
 
-**Deployed URL:** pending.
+### Layout
+
+```
+terraform/
+├── bootstrap/          S3 bucket for the remote state (native locking) and a monthly budget alert
+├── modules/
+│   ├── networking/     VPC, public and private subnets in 2 AZs, optional NAT gateway
+│   ├── security/       Security groups: Internet → ALB → ECS → RDS
+│   ├── ecr/            Image repository with immutable tags, scan on push and lifecycle policy
+│   ├── database/       RDS PostgreSQL in private subnets, password managed by RDS in Secrets Manager
+│   ├── iam/            Least privilege task execution role
+│   ├── alb/            Load balancer, target group and health check on /actuator/health
+│   ├── ecs/            Cluster, task definition, service and log group
+│   └── autoscaling/    Target tracking policy on CPU
+├── environments/
+│   ├── dev/            backend.hcl.example and terraform.tfvars.example
+│   └── prod/           Same stack with bigger sizes, NAT gateway and Multi-AZ database
+└── main.tf             Root stack shared by every environment
+```
+
+Every environment uses the same root stack with its own variables file and its own state key, so no resource
+is duplicated between environments.
+
+### Cost
+
+The `dev` values keep the bill to roughly **USD 1.5–2 per day** (often covered by the AWS free tier or
+credits): no NAT gateway, one 0.25 vCPU task, a `db.t4g.micro` Single-AZ database without backups and one
+day of log retention. The tasks run in public subnets but their security group only accepts traffic from the
+load balancer; the database is always private. Destroy the environment after using it.
+
+### Prerequisites
+
+- AWS account and the AWS CLI configured (`aws configure`) with permissions to create the resources above
+- Terraform 1.10 or newer
+- Docker
+
+### 1. Bootstrap the remote state (once per account)
+
+```bash
+cd terraform/bootstrap
+cp terraform.tfvars.example terraform.tfvars        # set budget_alert_email
+terraform init
+terraform apply
+```
+
+Confirm the subscription email sent by AWS Budgets. Note the `state_bucket_name` output.
+
+### 2. Configure the environment
+
+```bash
+cd ..                                                # terraform/
+cp environments/dev/backend.hcl.example environments/dev/backend.hcl
+cp environments/dev/terraform.tfvars.example environments/dev/terraform.tfvars
+```
+
+Set the bucket name from step 1 in `backend.hcl`. Both files are ignored by Git.
+
+```bash
+terraform init -backend-config=environments/dev/backend.hcl
+```
+
+### 3. Create the image repository and push the image
+
+The ECS service needs an image before it can start, so the repository is created first.
+
+```bash
+export IMAGE_TAG=$(git rev-parse --short HEAD)
+terraform apply -var-file=environments/dev/terraform.tfvars -var image_tag=$IMAGE_TAG -target=module.ecr
+
+export ECR_URL=$(terraform output -raw ecr_repository_url)
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ECR_URL%%/*}
+docker build -t $ECR_URL:$IMAGE_TAG ..
+docker push $ECR_URL:$IMAGE_TAG
+```
+
+Image tags are immutable: every deployment uses the commit hash, never `latest`.
+
+### 4. Deploy the environment
+
+```bash
+terraform plan  -var-file=environments/dev/terraform.tfvars -var image_tag=$IMAGE_TAG
+terraform apply -var-file=environments/dev/terraform.tfvars -var image_tag=$IMAGE_TAG
+```
+
+The database takes around 5–10 minutes to be created. The schema is applied by the application on startup.
+
+### 5. Verify
+
+```bash
+export API_URL=$(terraform output -raw api_url)
+curl $API_URL/actuator/health
+curl -X POST $API_URL/api/v1/franchise -H "Content-Type: application/json" -d '{"name":"Coffee House"}'
+terraform output swagger_url
+```
+
+Logs are available in CloudWatch under `/ecs/franchise-dev`.
+
+### 6. Deploy a new version
+
+Build and push a new image with the new commit hash (step 3 without the `-target` apply) and run step 4 with
+the new `IMAGE_TAG`. The deployment circuit breaker rolls back automatically if the new tasks never become
+healthy.
+
+### 7. Destroy everything
+
+```bash
+terraform destroy -var-file=environments/dev/terraform.tfvars -var image_tag=$IMAGE_TAG
+cd bootstrap && terraform destroy                    # optional: removes the state bucket and the budget
+```
+
+To work with `prod`, run `terraform init -reconfigure -backend-config=environments/prod/backend.hcl` and use
+the `prod` variables file.
+
+**Deployed URL:** pending (filled in after the deployment for the presentation).
