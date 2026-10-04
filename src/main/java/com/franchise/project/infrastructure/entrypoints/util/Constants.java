@@ -4,8 +4,6 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class Constants {
-    public static final String REQUEST_FAILED_LOG = "Request failed";
-
     public static final String PATH_FRANCHISE = "/api/v1/franchise";
     public static final String PATH_FRANCHISE_UPDATE_NAME = "/api/v1/franchise/name";
     public static final String FRANCHISE_ID_PATH_VARIABLE = "franchiseId";

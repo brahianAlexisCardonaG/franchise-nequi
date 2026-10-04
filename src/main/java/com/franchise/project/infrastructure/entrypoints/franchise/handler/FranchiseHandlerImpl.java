@@ -14,7 +14,6 @@ import com.franchise.project.infrastructure.entrypoints.franchise.response.ApiFr
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -25,11 +24,9 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.FRANCHISE_ID_PATH_VARIABLE;
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.REQUEST_FAILED_LOG;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class FranchiseHandlerImpl {
 
     private final RequestValidator requestValidator;
@@ -53,8 +50,7 @@ public class FranchiseHandlerImpl {
                                 .message(TechnicalMessage.FRANCHISE_CREATED.getMessage())
                                 .date(Instant.now().toString())
                                 .data(franchise)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -70,8 +66,7 @@ public class FranchiseHandlerImpl {
                                 .message(TechnicalMessage.FRANCHISE_BRANCH_PRODUCT_FOUND.getMessage())
                                 .date(Instant.now().toString())
                                 .data(franchise)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -88,8 +83,7 @@ public class FranchiseHandlerImpl {
                                 .message(TechnicalMessage.FRANCHISE_UPDATE.getMessage())
                                 .date(Instant.now().toString())
                                 .data(franchise)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 }

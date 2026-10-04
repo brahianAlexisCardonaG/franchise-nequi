@@ -4,6 +4,7 @@ import com.franchise.project.domain.enums.TechnicalMessage;
 import com.franchise.project.domain.exception.BusinessException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ApplyErrorHandler {
@@ -31,18 +33,30 @@ public class ApplyErrorHandler {
 
     public Mono<ServerResponse> applyErrorHandling(Mono<ServerResponse> mono) {
         return mono
-                .onErrorResume(BusinessException.class, ex -> buildErrorResponse.buildErrorResponse(
+                .onErrorResume(BusinessException.class, ex -> clientError(
                         STATUS_BY_MESSAGE.getOrDefault(ex.getTechnicalMessage(), HttpStatus.BAD_REQUEST),
                         ex.getTechnicalMessage()))
-                .onErrorResume(ServerWebInputException.class, ex -> buildErrorResponse.buildErrorResponse(
+                .onErrorResume(ServerWebInputException.class, ex -> clientError(
                         HttpStatus.BAD_REQUEST, TechnicalMessage.INVALID_REQUEST))
-                .onErrorResume(DuplicateKeyException.class, ex -> buildErrorResponse.buildErrorResponse(
+                .onErrorResume(DuplicateKeyException.class, ex -> clientError(
                         HttpStatus.CONFLICT, TechnicalMessage.RESOURCE_ALREADY_EXISTS))
-                .onErrorResume(CallNotPermittedException.class, ex -> buildErrorResponse.buildErrorResponse(
-                        HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE))
-                .onErrorResume(TimeoutException.class, ex -> buildErrorResponse.buildErrorResponse(
-                        HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE))
-                .onErrorResume(ex -> buildErrorResponse.buildErrorResponse(
-                        HttpStatus.INTERNAL_SERVER_ERROR, TechnicalMessage.INTERNAL_ERROR));
+                .onErrorResume(CallNotPermittedException.class, this::serviceUnavailable)
+                .onErrorResume(TimeoutException.class, this::serviceUnavailable)
+                .onErrorResume(this::unexpectedError);
+    }
+
+    private Mono<ServerResponse> clientError(HttpStatus status, TechnicalMessage technicalMessage) {
+        log.warn("Request rejected with status {}: {}", status.value(), technicalMessage.getMessage());
+        return buildErrorResponse.buildErrorResponse(status, technicalMessage);
+    }
+
+    private Mono<ServerResponse> serviceUnavailable(Throwable error) {
+        log.error("Persistence unavailable: {}", error.toString());
+        return buildErrorResponse.buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE);
+    }
+
+    private Mono<ServerResponse> unexpectedError(Throwable error) {
+        log.error("Unexpected error while processing the request", error);
+        return buildErrorResponse.buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, TechnicalMessage.INTERNAL_ERROR);
     }
 }

@@ -12,7 +12,6 @@ import com.franchise.project.infrastructure.entrypoints.branch.response.ApiBranc
 import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHandler;
 import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -22,11 +21,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.REQUEST_FAILED_LOG;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class BranchHandlerImpl {
     private final RequestValidator requestValidator;
     private final BranchMapper branchMapper;
@@ -48,8 +45,7 @@ public class BranchHandlerImpl {
                                 .message(TechnicalMessage.BRANCH_CREATED.getMessage())
                                 .date(Instant.now().toString())
                                 .data(branch)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -66,8 +62,7 @@ public class BranchHandlerImpl {
                                 .message(TechnicalMessage.BRANCH_UPDATE.getMessage())
                                 .date(Instant.now().toString())
                                 .data(branch)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 }

@@ -17,7 +17,6 @@ import com.franchise.project.infrastructure.entrypoints.util.error.ApplyErrorHan
 import com.franchise.project.infrastructure.entrypoints.util.response.ApiResponseMessage;
 import com.franchise.project.infrastructure.entrypoints.util.validation.RequestValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -28,11 +27,9 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 
 import static com.franchise.project.infrastructure.entrypoints.util.Constants.PRODUCT_ID_PATH_VARIABLE;
-import static com.franchise.project.infrastructure.entrypoints.util.Constants.REQUEST_FAILED_LOG;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class ProductHandlerImpl {
     private final RequestValidator requestValidator;
     private final ProductMapper productMapper;
@@ -56,8 +53,7 @@ public class ProductHandlerImpl {
                                 .message(TechnicalMessage.PRODUCT_CREATED.getMessage())
                                 .date(Instant.now().toString())
                                 .data(product)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -71,8 +67,7 @@ public class ProductHandlerImpl {
                                 .code(TechnicalMessage.PRODUCT_DELETED.getCode())
                                 .message(TechnicalMessage.PRODUCT_DELETED.getMessage())
                                 .date(Instant.now().toString())
-                                .build())))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build())));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -89,8 +84,7 @@ public class ProductHandlerImpl {
                                 .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
                                 .date(Instant.now().toString())
                                 .data(product)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 
@@ -107,8 +101,7 @@ public class ProductHandlerImpl {
                                 .message(TechnicalMessage.PRODUCT_UPDATE.getMessage())
                                 .date(Instant.now().toString())
                                 .data(product)
-                                .build()))
-                .doOnError(ex -> log.error(REQUEST_FAILED_LOG, ex));
+                                .build()));
         return applyErrorHandler.applyErrorHandling(response);
     }
 }
