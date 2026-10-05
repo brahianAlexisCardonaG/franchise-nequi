@@ -75,7 +75,7 @@ variable "max_tasks" {
 variable "database_instance_class" {
   type        = string
   description = "RDS instance class"
-  default     = "db.t4g.micro"
+  default     = "db.t3.micro"
 }
 
 variable "database_multi_az" {

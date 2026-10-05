@@ -49,3 +49,4 @@ out/
 CLAUDE.md
 .claude/
 backend.hcl
+*.tfplan
