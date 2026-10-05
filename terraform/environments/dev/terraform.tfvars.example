@@ -9,7 +9,7 @@ task_memory = 1024
 min_tasks   = 1
 max_tasks   = 2
 
-database_instance_class        = "db.t4g.micro"
+database_instance_class        = "db.t3.micro"
 database_multi_az              = false
 database_backup_retention_days = 0
 database_deletion_protection   = false
