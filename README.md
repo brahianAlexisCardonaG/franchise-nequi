@@ -8,6 +8,21 @@ Resilience4j, following a hexagonal (ports and adapters) architecture.
 - **Branch**: name and a list of products
 - **Product**: name and stock
 
+**Live API:** http://franchise-dev-alb-1458785710.us-east-1.elb.amazonaws.com
+([Swagger UI](http://franchise-dev-alb-1458785710.us-east-1.elb.amazonaws.com/webjars/swagger-ui/index.html))
+
+## Quick start
+
+With Docker (or Podman) installed, from the project root:
+
+```bash
+cp .env.example .env            # then set POSTGRES_PASSWORD and SPRING_R2DBC_PASSWORD to the same value
+docker compose up --build
+```
+
+Open http://localhost:8085/webjars/swagger-ui/index.html and try the endpoints. The details are in
+[Run locally](#run-locally).
+
 ## Table of contents
 
 1. [Tech stack](#tech-stack)
@@ -32,7 +47,8 @@ Resilience4j, following a hexagonal (ports and adapters) architecture.
 | Mapping | MapStruct, Lombok |
 | API docs | springdoc-openapi (OpenAPI 3 + Swagger UI) |
 | Tests | JUnit 5, Mockito, Reactor StepVerifier, WebTestClient, JaCoCo |
-| Containers | Docker multi-stage build, Docker Compose |
+| Containers | Docker multi-stage build, Docker Compose (Podman compatible) |
+| Infrastructure | Terraform, AWS (ECR, ECS Fargate, ALB, RDS, Secrets Manager) |
 
 ## Architecture
 
@@ -123,16 +139,24 @@ curl -X DELETE localhost:8085/api/v1/product/1
 
 | Tool | Version | Needed for |
 |---|---|---|
-| Docker + Docker Compose | Docker 24+ | Running the database and the API |
-| Java (JDK) | 17 | Running the API or the tests outside Docker |
+| Docker + Docker Compose, or Podman with a compose provider | Docker 24+ / Podman 5+ | Running the database and the API |
+| Java (JDK) | 17 | Running the API or the tests outside containers |
 | AWS CLI and Terraform | AWS CLI 2, Terraform 1.10+ | Only for the AWS deployment |
 
 Gradle does not need to be installed: the project ships with the Gradle wrapper.
 
+The commands in this README are written for bash: Linux, macOS, or Git Bash/WSL on Windows. With Podman,
+replace `docker` with `podman` in every command. Two Podman on Windows issues and their fixes:
+
+- The Podman machine cannot download images or reach AWS: run `podman machine stop`,
+  `podman machine set --user-mode-networking=true` and `podman machine start`.
+- `localhost:8085` does not answer although the containers are healthy: use the machine IP instead, shown by
+  `podman machine ssh "ip -4 addr show eth0"`.
+
 ### Option A: everything with Docker Compose
 
 ```bash
-cp .env.example .env            # then set a password in .env
+cp .env.example .env            # then set POSTGRES_PASSWORD and SPRING_R2DBC_PASSWORD to the same value
 docker compose up --build
 ```
 
@@ -162,7 +186,7 @@ All settings come from environment variables. Defaults are only meant for local 
 
 | Variable | Default | Description |
 |---|---|---|
-| `SPRING_R2DBC_URL` | `r2dbc:postgresql://localhost:5432/franchise` | Database URL (add `?sslmode=require` for managed databases) |
+| `SPRING_R2DBC_URL` | `r2dbc:postgresql://localhost:5432/franchise` | Database URL (add `?sslMode=require` for managed databases such as RDS) |
 | `SPRING_R2DBC_USERNAME` | `franchise` | Database user |
 | `SPRING_R2DBC_PASSWORD` | `change-me` | Database password |
 | `SPRING_SQL_INIT_MODE` | `never` | `always` applies `schema.sql` on startup |
@@ -222,8 +246,8 @@ Every persistence call goes through `PersistenceResilience`:
 
 ## Deployment on AWS
 
-The whole infrastructure is defined with Terraform (`terraform/`) and is designed to run a short-lived
-environment for a few cents a day.
+The whole infrastructure is defined with Terraform (`terraform/`). The `dev` environment is sized to be
+created for a demo and destroyed afterwards (see [Cost](#cost)).
 
 ```mermaid
 flowchart LR
@@ -262,15 +286,20 @@ is duplicated between environments.
 ### Cost
 
 The `dev` values keep the bill to roughly **USD 1.5–2 per day** (often covered by the AWS free tier or
-credits): no NAT gateway, one 0.25 vCPU task, a `db.t4g.micro` Single-AZ database without backups and one
+credits): no NAT gateway, one 0.25 vCPU task, a `db.t3.micro` Single-AZ database without backups and one
 day of log retention. The tasks run in public subnets but their security group only accepts traffic from the
 load balancer; the database is always private. Destroy the environment after using it.
 
+The database uses `db.t3.micro` because `db.t4g.micro` is not offered for PostgreSQL 16 in `us-east-1`.
+
 ### Prerequisites
 
-- AWS account and the AWS CLI configured (`aws configure`) with permissions to create the resources above
+- An AWS account and an IAM user (not the root user) with permissions to create the resources above. For a
+  short test deployment the simplest option is the `AdministratorAccess` policy, removed afterwards.
+- The AWS CLI configured with that user: `aws configure`, region `us-east-1`. Check it with
+  `aws sts get-caller-identity`.
 - Terraform 1.10 or newer
-- Docker
+- Docker or Podman
 
 ### 1. Bootstrap the remote state (once per account)
 
@@ -311,7 +340,9 @@ docker build -t $ECR_URL:$IMAGE_TAG ..
 docker push $ECR_URL:$IMAGE_TAG
 ```
 
-Image tags are immutable: every deployment uses the commit hash, never `latest`.
+Terraform warns that resource targeting is in effect; that is expected in this step. Image tags are immutable:
+every deployment uses the commit hash, never `latest`. With Podman, build with
+`podman build --format docker -t $ECR_URL:$IMAGE_TAG ..` so the image keeps its `HEALTHCHECK`.
 
 ### 4. Deploy the environment
 
@@ -320,7 +351,9 @@ terraform plan  -var-file=environments/dev/terraform.tfvars -var image_tag=$IMAG
 terraform apply -var-file=environments/dev/terraform.tfvars -var image_tag=$IMAGE_TAG
 ```
 
-The database takes around 5–10 minutes to be created. The schema is applied by the application on startup.
+The database takes around 5–10 minutes to be created. Then the task starts, applies the schema and, with
+0.25 vCPU, needs about 1.5 minutes to boot: the load balancer reports the target as unhealthy until then.
+The service gives it 3 minutes before counting failed health checks.
 
 ### 5. Verify
 
@@ -331,7 +364,8 @@ curl -X POST $API_URL/api/v1/franchise -H "Content-Type: application/json" -d '{
 terraform output swagger_url
 ```
 
-Logs are available in CloudWatch under `/ecs/franchise-dev`.
+Logs are available in CloudWatch under `/ecs/franchise-dev`. The first request to Swagger takes a few
+seconds because the OpenAPI document is generated on demand; later requests answer in under a second.
 
 ### 6. Deploy a new version
 
@@ -349,4 +383,6 @@ cd bootstrap && terraform destroy                    # optional: removes the sta
 To work with `prod`, run `terraform init -reconfigure -backend-config=environments/prod/backend.hcl` and use
 the `prod` variables file.
 
-**Deployed URL:** pending (filled in after the deployment for the presentation).
+**Deployed URL:** http://franchise-dev-alb-1458785710.us-east-1.elb.amazonaws.com. The load balancer name
+changes if the environment is destroyed and created again; `terraform output api_url` always prints the
+current one.
