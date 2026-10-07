@@ -238,7 +238,7 @@ return the same body shape:
 | 404 | The franchise, branch or product does not exist |
 | 409 | Duplicated name in the same scope |
 | 500 | Unexpected error (no internal details are returned) |
-| 503 | Database timeout or circuit breaker open |
+| 503 | Database unreachable, timeout or circuit breaker open |
 
 ## Resilience
 

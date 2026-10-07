@@ -5,6 +5,7 @@ import com.franchise.project.model.exception.BusinessException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -42,6 +43,7 @@ public class ApplyErrorHandler {
                         HttpStatus.CONFLICT, TechnicalMessage.RESOURCE_ALREADY_EXISTS))
                 .onErrorResume(CallNotPermittedException.class, this::serviceUnavailable)
                 .onErrorResume(TimeoutException.class, this::serviceUnavailable)
+                .onErrorResume(DataAccessResourceFailureException.class, this::serviceUnavailable)
                 .onErrorResume(this::unexpectedError);
     }
 

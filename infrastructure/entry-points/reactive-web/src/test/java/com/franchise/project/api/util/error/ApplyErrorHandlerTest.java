@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -42,6 +43,18 @@ class ApplyErrorHandlerTest {
 
         assertThat(output.getOut())
                 .contains("ERROR")
+                .contains("Persistence unavailable")
+                .doesNotContain(STACK_FRAME);
+    }
+
+    @Test
+    void lostDatabaseConnectionReturnsServiceUnavailable(CapturedOutput output) {
+        StepVerifier.create(applyErrorHandler.applyErrorHandling(Mono.<ServerResponse>error(
+                        new DataAccessResourceFailureException("Failed to obtain R2DBC Connection"))))
+                .assertNext(response -> assertThat(response.statusCode().value()).isEqualTo(503))
+                .verifyComplete();
+
+        assertThat(output.getOut())
                 .contains("Persistence unavailable")
                 .doesNotContain(STACK_FRAME);
     }
