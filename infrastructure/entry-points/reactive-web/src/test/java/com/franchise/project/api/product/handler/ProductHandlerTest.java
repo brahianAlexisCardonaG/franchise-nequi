@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
@@ -97,7 +96,7 @@ class ProductHandlerTest {
     @Test
     void createProductRaceOnUniqueConstraintReturnsConflict() {
         when(createProductUseCase.createProduct(new Product(null, "Coffee", STOCK, 5L)))
-                .thenReturn(Mono.error(new DuplicateKeyException("uq_product_branch_name")));
+                .thenReturn(Mono.error(new BusinessException(TechnicalMessage.RESOURCE_ALREADY_EXISTS)));
 
         webTestClient.post().uri("/api/v1/product")
                 .contentType(MediaType.APPLICATION_JSON)

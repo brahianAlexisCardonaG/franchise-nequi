@@ -2,11 +2,11 @@ package com.franchise.project.api.util.error;
 
 import com.franchise.project.model.enums.TechnicalMessage;
 import com.franchise.project.model.exception.BusinessException;
+import com.franchise.project.model.exception.TechnicalException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -36,27 +36,24 @@ class ApplyErrorHandlerTest {
     }
 
     @Test
-    void unavailablePersistenceIsLoggedAsErrorWithoutStackTrace(CapturedOutput output) {
-        StepVerifier.create(applyErrorHandler.applyErrorHandling(Mono.<ServerResponse>error(new TimeoutException("db"))))
+    void technicalErrorsReturnServiceUnavailableAndLogTheCauseWithoutStackTrace(CapturedOutput output) {
+        StepVerifier.create(applyErrorHandler.applyErrorHandling(Mono.<ServerResponse>error(
+                        new TechnicalException(TechnicalMessage.SERVICE_UNAVAILABLE, new TimeoutException("db")))))
                 .assertNext(response -> assertThat(response.statusCode().value()).isEqualTo(503))
                 .verifyComplete();
 
         assertThat(output.getOut())
                 .contains("ERROR")
-                .contains("Persistence unavailable")
+                .contains("Persistence unavailable: java.util.concurrent.TimeoutException: db")
                 .doesNotContain(STACK_FRAME);
     }
 
     @Test
-    void lostDatabaseConnectionReturnsServiceUnavailable(CapturedOutput output) {
-        StepVerifier.create(applyErrorHandler.applyErrorHandling(Mono.<ServerResponse>error(
-                        new DataAccessResourceFailureException("Failed to obtain R2DBC Connection"))))
-                .assertNext(response -> assertThat(response.statusCode().value()).isEqualTo(503))
+    void duplicatedResourceReportedByPersistenceReturnsConflict() {
+        StepVerifier.create(applyErrorHandler.applyErrorHandling(
+                        Mono.error(new BusinessException(TechnicalMessage.RESOURCE_ALREADY_EXISTS))))
+                .assertNext(response -> assertThat(response.statusCode().value()).isEqualTo(409))
                 .verifyComplete();
-
-        assertThat(output.getOut())
-                .contains("Persistence unavailable")
-                .doesNotContain(STACK_FRAME);
     }
 
     @Test

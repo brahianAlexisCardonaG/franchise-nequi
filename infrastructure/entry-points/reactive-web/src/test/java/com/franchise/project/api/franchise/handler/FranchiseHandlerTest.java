@@ -3,6 +3,7 @@ package com.franchise.project.api.franchise.handler;
 import com.franchise.project.model.branch.BranchProduct;
 import com.franchise.project.model.enums.TechnicalMessage;
 import com.franchise.project.model.exception.BusinessException;
+import com.franchise.project.model.exception.TechnicalException;
 import com.franchise.project.usecase.createfranchise.CreateFranchiseUseCase;
 import com.franchise.project.usecase.gettopstockproducts.GetTopStockProductsUseCase;
 import com.franchise.project.usecase.updatefranchisename.UpdateFranchiseNameUseCase;
@@ -16,8 +17,6 @@ import com.franchise.project.api.util.validation.RequestValidator;
 import jakarta.validation.Validation;
 import com.franchise.project.api.util.error.ApplyErrorHandler;
 import com.franchise.project.api.util.error.BuildErrorResponse;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -167,9 +166,9 @@ class FranchiseHandlerTest {
     }
 
     @Test
-    void openCircuitReturnsServiceUnavailable() {
+    void technicalErrorReturnsServiceUnavailable() {
         when(getTopStockProductsUseCase.getTopStockProducts(1L)).thenReturn(Mono.error(
-                CallNotPermittedException.createCallNotPermittedException(CircuitBreaker.ofDefaults("persistence"))));
+                new TechnicalException(TechnicalMessage.SERVICE_UNAVAILABLE, new IllegalStateException("circuit open"))));
 
         webTestClient.get().uri("/api/v1/franchise/{franchiseId}/top-stock-products", 1)
                 .exchange()
