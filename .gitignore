@@ -50,3 +50,5 @@ CLAUDE.md
 .claude/
 backend.hcl
 *.tfplan
+
+graphify-out/

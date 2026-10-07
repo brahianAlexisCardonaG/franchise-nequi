@@ -1,93 +1,21 @@
+buildscript {
+	ext {
+		cleanArchitectureVersion = '4.7.2'
+		springBootVersion = '3.5.16'
+		jacocoVersion = '0.8.13'
+		lombokVersion = '1.18.48'
+		mapstructVersion = '1.5.3.Final'
+		resilience4jVersion = '2.3.0'
+		springdocVersion = '2.8.17'
+		blockHoundVersion = '1.0.17.RELEASE'
+	}
+}
+
 plugins {
-	id 'java'
+	id 'co.com.bancolombia.cleanArchitecture' version "${cleanArchitectureVersion}"
+	id 'org.springframework.boot' version "${springBootVersion}" apply false
 	id 'jacoco'
-	id 'org.springframework.boot' version '3.5.16'
-	id 'io.spring.dependency-management' version '1.1.7'
+	id 'base'
 }
 
-group = 'com'
-version = '0.0.1-SNAPSHOT'
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
-
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
-repositories {
-	mavenCentral()
-}
-
-ext {
-	resilience4jVersion = '2.3.0'
-}
-
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation "io.github.resilience4j:resilience4j-spring-boot3:${resilience4jVersion}"
-	implementation "io.github.resilience4j:resilience4j-reactor:${resilience4jVersion}"
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'org.postgresql:postgresql'
-	runtimeOnly 'org.postgresql:r2dbc-postgresql'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'io.projectreactor:reactor-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'org.mapstruct:mapstruct:1.5.3.Final'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-	testImplementation 'org.mapstruct:mapstruct:1.5.3.Final'
-	testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.17'
-}
-
-def coverageExclusions = [
-		'**/FranchiseApplication.class',
-		'**/*MapperImpl.class',
-		'**/*MapperResponseImpl.class'
-]
-
-tasks.named('test') {
-	useJUnitPlatform()
-	finalizedBy tasks.named('jacocoTestReport')
-}
-
-tasks.named('jacocoTestReport') {
-	dependsOn tasks.named('test')
-	reports {
-		xml.required = true
-		html.required = true
-		csv.required = true
-	}
-	classDirectories.setFrom(files(classDirectories.files.collect {
-		fileTree(dir: it, exclude: coverageExclusions)
-	}))
-}
-
-tasks.named('jacocoTestCoverageVerification') {
-	dependsOn tasks.named('jacocoTestReport')
-	classDirectories.setFrom(files(classDirectories.files.collect {
-		fileTree(dir: it, exclude: coverageExclusions)
-	}))
-	violationRules {
-		rule {
-			limit {
-				counter = 'LINE'
-				value = 'COVEREDRATIO'
-				minimum = 0.70
-			}
-		}
-	}
-}
-
-tasks.named('check') {
-	dependsOn tasks.named('jacocoTestCoverageVerification')
-}
+apply from: './main.gradle'

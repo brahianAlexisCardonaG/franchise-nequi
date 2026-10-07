@@ -1,0 +1,99 @@
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+    apply plugin: 'io.spring.dependency-management'
+
+    compileJava.dependsOn validateStructure
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    dependencies {
+        implementation platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
+        implementation 'io.projectreactor:reactor-core'
+
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+        testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+        testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testImplementation 'io.projectreactor:reactor-test'
+        testImplementation "io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}"
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.withType(Test).configureEach {
+        jvmArgs += ["-XX:+AllowRedefinitionToAddDeleteMethods"]
+    }
+
+    test.finalizedBy(project.tasks.jacocoTestReport)
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
+}
+
+jacoco {
+    toolVersion = "${jacocoVersion}"
+}
+
+def coverageExclusions = [
+        '**/MainApplication.class',
+        '**/*MapperImpl.class',
+        '**/*MapperResponseImpl.class'
+]
+
+def configureMergedCoverage = { task ->
+    task.dependsOn subprojects.jacocoTestReport
+    task.sourceDirectories.setFrom files(subprojects.sourceSets.main.allSource.srcDirs)
+    task.classDirectories.setFrom files(subprojects.sourceSets.main.output).asFileTree.matching {
+        exclude coverageExclusions
+    }
+    task.executionData.setFrom files(subprojects.collect { it.layout.buildDirectory.file('jacoco/test.exec') })
+            .filter { it.exists() }
+}
+
+tasks.register('jacocoMergedReport', JacocoReport) {
+    configureMergedCoverage(it)
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.register('jacocoMergedCoverageVerification', JacocoCoverageVerification) {
+    configureMergedCoverage(it)
+    dependsOn tasks.named('jacocoMergedReport')
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn subprojects.check
+    dependsOn tasks.named('jacocoMergedCoverageVerification')
+}

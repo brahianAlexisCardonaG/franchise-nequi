@@ -1,0 +1,22 @@
+apply plugin: 'org.springframework.boot'
+
+dependencies {
+	testImplementation 'tools.jackson.core:jackson-databind'
+	testImplementation platform('tools.jackson:jackson-bom:3.1.0')
+	testImplementation 'com.tngtech.archunit:archunit:1.5.1'
+    implementation project(':model')
+    implementation project(':usecase')
+    implementation project(':r2dbc-postgresql')
+    implementation project(':reactive-web')
+    implementation 'org.springframework.boot:spring-boot-starter'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
+}
+
+jar {
+    enabled = false
+}
+
+bootJar {
+    archiveFileName = "${project.getParent().getName()}.${archiveExtension.get()}"
+}
