@@ -4,9 +4,9 @@
 .idea
 .vscode
 *.iml
-build
-out
-bin
+**/build
+**/out
+**/bin
 terraform
 *.tfstate*
 *.tfvars

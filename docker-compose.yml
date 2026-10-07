@@ -16,7 +16,9 @@ services:
       retries: 10
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile
     image: franchise-api:local
     depends_on:
       postgres:
