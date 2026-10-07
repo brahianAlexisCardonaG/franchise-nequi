@@ -2,11 +2,9 @@ package com.franchise.project.api.util.error;
 
 import com.franchise.project.model.enums.TechnicalMessage;
 import com.franchise.project.model.exception.BusinessException;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import com.franchise.project.model.exception.TechnicalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -14,7 +12,6 @@ import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Component
@@ -27,7 +24,8 @@ public class ApplyErrorHandler {
             TechnicalMessage.PRODUCT_NOT_EXISTS, HttpStatus.NOT_FOUND,
             TechnicalMessage.FRANCHISE_ALREADY_EXISTS, HttpStatus.CONFLICT,
             TechnicalMessage.BRANCH_ALREADY_EXISTS, HttpStatus.CONFLICT,
-            TechnicalMessage.PRODUCT_ALREADY_EXISTS, HttpStatus.CONFLICT
+            TechnicalMessage.PRODUCT_ALREADY_EXISTS, HttpStatus.CONFLICT,
+            TechnicalMessage.RESOURCE_ALREADY_EXISTS, HttpStatus.CONFLICT
     );
 
     private final BuildErrorResponse buildErrorResponse;
@@ -39,11 +37,7 @@ public class ApplyErrorHandler {
                         ex.getTechnicalMessage()))
                 .onErrorResume(ServerWebInputException.class, ex -> clientError(
                         HttpStatus.BAD_REQUEST, TechnicalMessage.INVALID_REQUEST))
-                .onErrorResume(DuplicateKeyException.class, ex -> clientError(
-                        HttpStatus.CONFLICT, TechnicalMessage.RESOURCE_ALREADY_EXISTS))
-                .onErrorResume(CallNotPermittedException.class, this::serviceUnavailable)
-                .onErrorResume(TimeoutException.class, this::serviceUnavailable)
-                .onErrorResume(DataAccessResourceFailureException.class, this::serviceUnavailable)
+                .onErrorResume(TechnicalException.class, this::serviceUnavailable)
                 .onErrorResume(this::unexpectedError);
     }
 
@@ -52,9 +46,9 @@ public class ApplyErrorHandler {
         return buildErrorResponse.buildErrorResponse(status, technicalMessage);
     }
 
-    private Mono<ServerResponse> serviceUnavailable(Throwable error) {
-        log.error("Persistence unavailable: {}", error.toString());
-        return buildErrorResponse.buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, TechnicalMessage.SERVICE_UNAVAILABLE);
+    private Mono<ServerResponse> serviceUnavailable(TechnicalException error) {
+        log.error("Persistence unavailable: {}", String.valueOf(error.getCause()));
+        return buildErrorResponse.buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, error.getTechnicalMessage());
     }
 
     private Mono<ServerResponse> unexpectedError(Throwable error) {
