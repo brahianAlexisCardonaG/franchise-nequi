@@ -3,11 +3,9 @@ package com.franchise.project.model.branch;
 import com.franchise.project.model.product.Product;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 
-@Data
-@NoArgsConstructor
+@Value
 @AllArgsConstructor
 @Builder
 public class BranchProduct {
